@@ -20,7 +20,7 @@ import * as THREE from 'three';
 
 THREE.ColorManagement.enabled = false;   // see note (1) above
 
-const BUILD = 'b4fdb0a5';   // stamped by pipeline/version.py
+const BUILD = 'ba6fac1a';   // stamped by pipeline/version.py
 
 const FACES = ['px', 'nx', 'py', 'ny', 'pz', 'nz'];
 const DEG = Math.PI / 180;
@@ -113,11 +113,24 @@ function standable(x, z) {
   return (walk.bytes[bit >> 3] >> (7 - (bit & 7))) & 1;
 }
 
-/** Slide along whatever wall was hit instead of stopping dead. */
+/* Slide along whatever was hit instead of stopping dead.
+ *
+ * Axis-aligned fallbacks alone are not enough: walking at a doorway slightly
+ * off square, neither the pure-x nor the pure-z step fits, and you stick to
+ * the frame. Fanning out by a few degrees lets you feel your way through the
+ * gap the way you would in person. */
+const SLIDE_FAN = [0, 18, -18, 36, -36, 55, -55, 72, -72];
+
 function moveWithin(pos, dx, dz) {
-  if (standable(pos.x + dx, pos.z + dz)) { pos.x += dx; pos.z += dz; return true; }
-  if (standable(pos.x + dx, pos.z)) { pos.x += dx; return true; }
-  if (standable(pos.x, pos.z + dz)) { pos.z += dz; return true; }
+  for (const deg of SLIDE_FAN) {
+    const a = deg * Math.PI / 180;
+    const c = Math.cos(a), s2 = Math.sin(a);
+    // shorter steps the more we have to deviate, so corners do not fling you
+    const scale = deg === 0 ? 1 : Math.cos(a);
+    const nx = (dx * c - dz * s2) * scale;
+    const nz = (dx * s2 + dz * c) * scale;
+    if (standable(pos.x + nx, pos.z + nz)) { pos.x += nx; pos.z += nz; return true; }
+  }
   return false;
 }
 
@@ -602,26 +615,76 @@ function stepFade(now) {
   }
 }
 
-/** Walk to a position, steering and easing the view as we go. */
-function glideTo(target, { turn = null, dur = null } = {}) {
-  const from = app.pos.clone();
-  const dist = Math.hypot(target.x - from.x, target.z - from.z);
-  const d = dur != null ? dur
-    : (REDUCED_MOTION ? 240 : clamp(320 + dist * 420, 380, 1500));
+/* Route between viewpoints along the visibility graph.
+ *
+ * A straight line from the kitchen to the bedroom goes through a wall. Every
+ * link in the graph was established by casting a ray at eye and knee height,
+ * so a chain of links is by construction a walkable path -- breadth-first
+ * over it gives the shortest such chain. */
+function routeTo(destId) {
+  const startId = app.current;
+  if (!startId || startId === destId) return [destId];
+  const prev = new Map([[startId, null]]);
+  const queue = [startId];
+  while (queue.length) {
+    const id = queue.shift();
+    if (id === destId) break;
+    const n = app.nodes.get(id);
+    if (!n) continue;
+    for (const next of n.links) {
+      if (prev.has(next)) continue;
+      prev.set(next, id);
+      queue.push(next);
+    }
+  }
+  if (!prev.has(destId)) return [destId];     // disconnected: go direct
+  const path = [];
+  for (let id = destId; id != null; id = prev.get(id)) path.push(id);
+  path.reverse();
+  return path.slice(1);                        // drop where we already are
+}
+
+/** Walk a sequence of waypoints, steering and easing the view as we go. */
+function glideAlong(points, { turn = null } = {}) {
+  if (!points.length) return;
+  const legs = [];
+  let from = app.pos.clone();
+  let total = 0;
+  for (const p of points) {
+    const d = Math.hypot(p.x - from.x, p.z - from.z);
+    legs.push({ from, to: p.clone(), dist: d });
+    total += d;
+    from = p;
+  }
+  const dur = (REDUCED_MOTION ? 240 : clamp(320 + total * 420, 380, 2600))
+    * (app.durScale || 1);
   app.glide = {
-    from, to: target.clone(), t0: performance.now(), dur: d * (app.durScale || 1),
+    legs, total: Math.max(total, 1e-4), t0: performance.now(), dur,
     yaw0: app.yaw, dYaw: turn == null ? 0 : shortestAngle(app.yaw, turn),
     pitch0: app.pitch, dPitch: turn == null ? 0 : DEFAULT_PITCH - app.pitch,
   };
 }
+
+function glideTo(target, opts = {}) { glideAlong([target], opts); }
 
 function stepGlide(now) {
   const g = app.glide;
   if (!g) return;
   const raw = clamp((now - g.t0) / g.dur, 0, 1);
   const t = easeInOut(raw);
-  app.pos.x = lerp(g.from.x, g.to.x, t);
-  app.pos.z = lerp(g.from.z, g.to.z, t);
+  // walk the legs at a constant pace along the whole route
+  let want = t * g.total;
+  let leg = g.legs[g.legs.length - 1], local = 1;
+  for (const l of g.legs) {
+    if (want <= l.dist || l === g.legs[g.legs.length - 1]) {
+      leg = l;
+      local = l.dist > 1e-6 ? clamp(want / l.dist, 0, 1) : 1;
+      break;
+    }
+    want -= l.dist;
+  }
+  app.pos.x = lerp(leg.from.x, leg.to.x, local);
+  app.pos.z = lerp(leg.from.z, leg.to.z, local);
   if (g.dYaw) app.yaw = g.yaw0 + g.dYaw * t;
   if (g.dPitch) app.pitch = g.pitch0 + g.dPitch * t;
   if (raw >= 1) {
@@ -663,7 +726,11 @@ async function goTo(id, { turn = false, instant = false } = {}) {
     activate(id, { fade: false });
     return;
   }
-  glideTo(nodeVec(to), { turn: turn ? to.heading * DEG : null });
+  const hops = routeTo(id).map(hid => nodeVec(app.nodes.get(hid))).filter(Boolean);
+  // make sure every panorama along the way is ready before we set off
+  for (const hid of routeTo(id)) ensureNode(hid).catch(() => {});
+  glideAlong(hops.length ? hops : [nodeVec(to)],
+             { turn: turn ? to.heading * DEG : null });
 }
 
 /** Called every frame: move, then make sure the right panorama is showing. */
@@ -1267,12 +1334,16 @@ async function boot() {
 
   requestAnimationFrame(frame);
 
+  // Only the real viewpoints are worth fetching up front: they are what a
+  // room button jumps to. The walking positions load as you approach them,
+  // via prefetchNeighbours, and there are a lot of them.
   let loaded = 1;
-  const rest = app.tour.nodes.map(n => n.id).filter(id => id !== first);
+  const named = app.tour.nodes.filter(n => !n.walk);
+  const rest = named.map(n => n.id).filter(id => id !== first);
   Promise.all(rest.map(id => prefetchCubeFiles(id).then(() => {
     loaded++;
     $('splash-status').textContent =
-      `Ready. (${loaded} of ${app.tour.nodes.length} viewpoints loaded)`;
+      `Ready. (${loaded} of ${named.length} viewpoints loaded)`;
   }).catch(() => {})));
 
   startBtn.addEventListener('click', async () => {
