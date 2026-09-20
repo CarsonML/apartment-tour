@@ -25,23 +25,23 @@ EYE = 1.55
 # (id, label, blender x, y, heading, room)
 TARGETS = [
     ("bedroom",        "Bedroom",             1.15, 2.05,  112, "Bedroom"),
-    ("bedroom_window", "Bedroom window",      0.70, 0.95,  120, "Bedroom"),
+    ("bedroom_window", "Bedroom · by the window",      0.70, 0.95,  120, "Bedroom"),
     ("doorway",        "Bedroom doorway",     2.35, 0.55,  -85, "Bedroom"),
-    ("living_west",    "Living room (west)",  3.45, 1.55,  -80, "Living room"),
+    ("living_west",    "Living room · by the bedroom",  3.45, 1.55,  -80, "Living room"),
     ("living_center",  "Living room",         4.80, 1.30,  -50, "Living room"),
-    ("living_window",  "Living room (by the window)", 5.70, 2.15, -140, "Living room"),
-    ("living_south",   "Living room (south)", 5.25, 0.40,  -45, "Living room"),
+    ("living_window",  "Living room · by the window", 5.70, 2.15, -140, "Living room"),
+    ("living_south",   "Living room · by the front door", 5.25, 0.40,  -45, "Living room"),
     ("entry",          "Front door",          5.85, 0.15,  -20, "Living room"),
     ("kitchen_west",   "Kitchen",             7.10, 1.45,  -30, "Kitchen"),
-    ("kitchen_east",   "Kitchen (far end)",   8.65, 1.45,   90, "Kitchen"),
+    ("kitchen_east",   "Kitchen · far end",   8.65, 1.45,   90, "Kitchen"),
     ("bathroom",       "Bathroom",            9.60, 0.25,  100, "Bathroom"),
     # second wave, sited by pipeline/coverage.py where the tour was thinnest
-    ("living_east",    "Living room (east)",  6.03, 1.18,  -65, "Living room"),
-    ("living_north",   "Living room (north)", 4.33, 2.73, -100, "Living room"),
-    ("living_sw",      "Living room corner",  3.88, -0.27, -40, "Living room"),
-    ("living_nw",      "Living room (bay)",   3.23, 2.58, -125, "Living room"),
-    ("bedroom_east",   "Bedroom (closet)",    2.03, 1.53,   90, "Bedroom"),
-    ("bath_shower",    "Bathroom (shower)",   8.90, 0.20,   95, "Bathroom"),
+    ("living_east",    "Living room · by the kitchen",  6.03, 1.18,  -65, "Living room"),
+    ("living_north",   "Living room · back wall", 4.33, 2.73, -100, "Living room"),
+    ("living_sw",      "Living room · front corner",  3.88, -0.27, -40, "Living room"),
+    ("living_nw",      "Living room · back corner",   3.23, 2.58, -125, "Living room"),
+    ("bedroom_east",   "Bedroom · by the closet", 2.03, 1.53,  90, "Bedroom"),
+    ("bath_shower",    "Bathroom · by the shower",   8.90, 0.20,   95, "Bathroom"),
 ]
 
 

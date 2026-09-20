@@ -102,7 +102,7 @@
     },
     {
       "id": "bedroom_window",
-      "label": "Bedroom window",
+      "label": "Bedroom \u00b7 by the window",
       "room": "Bedroom",
       "pos": [
         0.7250000000000001,
@@ -142,7 +142,7 @@
     },
     {
       "id": "living_west",
-      "label": "Living room (west)",
+      "label": "Living room \u00b7 by the bedroom",
       "room": "Living room",
       "pos": [
         3.4750000000000005,
@@ -188,7 +188,7 @@
     },
     {
       "id": "living_window",
-      "label": "Living room (by the window)",
+      "label": "Living room \u00b7 by the window",
       "room": "Living room",
       "pos": [
         5.675000000000001,
@@ -210,7 +210,7 @@
     },
     {
       "id": "living_south",
-      "label": "Living room (south)",
+      "label": "Living room \u00b7 by the front door",
       "room": "Living room",
       "pos": [
         5.2250000000000005,
@@ -281,7 +281,7 @@
     },
     {
       "id": "kitchen_east",
-      "label": "Kitchen (far end)",
+      "label": "Kitchen \u00b7 far end",
       "room": "Kitchen",
       "pos": [
         8.625,
@@ -315,7 +315,7 @@
     },
     {
       "id": "living_east",
-      "label": "Living room (east)",
+      "label": "Living room \u00b7 by the kitchen",
       "room": "Living room",
       "pos": [
         6.025,
@@ -339,7 +339,7 @@
     },
     {
       "id": "living_north",
-      "label": "Living room (north)",
+      "label": "Living room \u00b7 back wall",
       "room": "Living room",
       "pos": [
         4.325,
@@ -360,7 +360,7 @@
     },
     {
       "id": "living_sw",
-      "label": "Living room corner",
+      "label": "Living room \u00b7 front corner",
       "room": "Living room",
       "pos": [
         3.875,
@@ -382,7 +382,7 @@
     },
     {
       "id": "living_nw",
-      "label": "Living room (bay)",
+      "label": "Living room \u00b7 back corner",
       "room": "Living room",
       "pos": [
         3.2250000000000005,
@@ -403,7 +403,7 @@
     },
     {
       "id": "bedroom_east",
-      "label": "Bedroom (closet)",
+      "label": "Bedroom \u00b7 by the closet",
       "room": "Bedroom",
       "pos": [
         2.0250000000000004,
@@ -418,7 +418,7 @@
     },
     {
       "id": "bath_shower",
-      "label": "Bathroom (shower)",
+      "label": "Bathroom \u00b7 by the shower",
       "room": "Bathroom",
       "pos": [
         8.875,
