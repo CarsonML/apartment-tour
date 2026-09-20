@@ -20,7 +20,8 @@ export. Pre-rendering sidesteps both problems instead of fighting them.
 
 ## How it works
 
-**Viewpoints.** 17 spots at eye height (1.55 m). None were placed by guessing.
+**Viewpoints.** 17 spots at eye height (1.55 m). None were placed, aimed, or
+labelled by guessing.
 `occupancy_scan.py` raycasts the scene on a 5 cm grid to find where a person
 could actually stand — floor below, ceiling above, real headroom, and nothing
 within 30 cm at eye and chest height. That yields 27.5 m² of interior and
@@ -90,11 +91,44 @@ python3 pipeline/gen_tour.py --nodes pipeline/nodes.json \
 Steps 3 and 4 are both resumable — anything already on disk is skipped — so
 they can be stopped and picked up freely.
 
+## The authoring tools
+
+None of these render anything; they all read the packed site and are cheap to
+re-run.
+
 `contact_sheet.py` rebuilds a labelled equirectangular view of each viewpoint
-from the packed faces. Every default heading was read off those sheets rather
-than guessed at, and it doubles as an independent check that the cube-map
-convention is right: if the faces were wrong the reassembled panorama would not
-be seamless.
+from the packed faces. It doubles as an independent check that the cube-map
+convention is right: if the faces were wrong, the reassembled panorama would
+not be seamless.
+
+`qa_grid.py` tiles the *opening view* of all 17 viewpoints onto one sheet —
+exactly what a visitor sees the instant they arrive. It is the fastest way to
+spot a camera aimed into a cupboard.
+
+`score_headings.py` ranks every possible opening heading by mean gradient
+magnitude, a rough proxy for "is there anything to look at". It caught two
+viewpoints opening on blank surfaces that had passed a casual eyeball:
+`bedroom_east` at 0.5 and `living_window` at 1.3, against a typical 5–7. Treat
+it as an aid, not an oracle — it rates a mosaic backsplash above a good view
+down the flat, and `living_window` deliberately keeps a heading it does not
+rank first, because the top-scoring one is half a metre of window glass.
+
+`coverage.py` proposes new viewpoints by farthest-point sampling the standable
+floor. One caveat learned the hard way: it measures distance *through* the free
+space, and where the mask is fragmented by a tight threshold rather than by an
+actual wall, it reports a gap that is not real. It once proposed a spot 0.38 m
+from an existing viewpoint as a 3.58 m hole. Check candidates against the
+straight-line distance before rendering six faces of one.
+
+`verify_site.py` is the gate: every viewpoint has all 18 faces at the right
+dimensions, depth matches what the manifest claims, links point at real
+viewpoints, every viewpoint falls inside the floor plan, rooms and route are
+consistent. `finish.sh` runs it last, so a packaging mistake fails loudly
+rather than turning into a silent 404 and a black wall.
+
+`version.py` stamps `index.html` and the tour fetch with a hash of the built
+files. Without it a browser will happily pair a new `app.js` with a cached
+`tour.json`.
 
 ## Four things that will bite you
 
@@ -125,6 +159,25 @@ just backwards. Compare a face against `raw/full/<node>/px.png` to catch it.
 the position of anything already present in `nodes.json`, so changing the mask
 or the scoring can never shift a spot that has already been rendered. Delete
 the entry from `nodes.json` if you genuinely want it re-sited.
+
+## Bounding video memory
+
+A 2048 px cube map is about 134 MB of video memory once mipped, and two are
+resident while walking. Left alone the base tier compounds that: every
+viewpoint you visit keeps its own, which across 17 is another 140 MB. So:
+
+- the sharpest tier is chosen from what the device admits to — an older tablet
+  or any small touch screen gets 1024 instead of 2048;
+- at most two high-res sets are kept, and at most eight base ones, both LRU;
+- the base tier has mipmaps off, since it is only ever magnified;
+- the boot preload fetches the *files* rather than building textures, so the
+  bytes are local but the GPU stays empty until you actually go somewhere.
+
+Worst case lands near 200 MB instead of 410 MB. If you raise `BASE_CACHE`,
+note that `ensureNode` deliberately checks whether the textures still exist
+rather than trusting a "loaded once" flag — an evicted viewpoint handed back
+on a stale flag renders as a black room, and only after enough walking to
+trigger an eviction.
 
 ## Publishing
 
