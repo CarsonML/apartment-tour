@@ -113,6 +113,18 @@ button{font:inherit;color:inherit;cursor:pointer}
   #turn-right{right:8px}
 }
 
+#walk{position:absolute;left:50%;transform:translateX(-50%);z-index:21;
+  bottom:calc(var(--bar-h) + 16px + env(safe-area-inset-bottom));
+  display:flex;align-items:center;gap:9px;border:0;padding:13px 22px 13px 18px;
+  border-radius:999px;background:rgba(255,253,250,.92);color:var(--ink);
+  font-size:17px;font-weight:600;box-shadow:0 4px 18px rgba(40,30,20,.20);
+  -webkit-tap-highlight-color:transparent;transition:background .15s ease}
+#walk svg{width:22px;height:22px;fill:none;stroke:currentColor;stroke-width:2.6;
+  stroke-linecap:round;stroke-linejoin:round}
+#walk:hover{background:#fff}
+#walk:active{background:var(--accent);color:#fff}
+@media (max-width:760px){ #walk{padding:11px 18px 11px 15px;font-size:16px} }
+
 #loadbar{position:absolute;top:0;left:0;right:0;height:3px;z-index:30;background:transparent}
 #loadbar.hidden{opacity:0}
 #loadbar-fill{height:100%;width:0;background:var(--accent);transition:width .2s ease}

@@ -20,7 +20,7 @@ import * as THREE from 'three';
 
 THREE.ColorManagement.enabled = false;   // see note (1) above
 
-const BUILD = 'ce081b73';   // stamped by pipeline/version.py
+const BUILD = 'b4fdb0a5';   // stamped by pipeline/version.py
 
 const FACES = ['px', 'nx', 'py', 'ny', 'pz', 'nz'];
 const DEG = Math.PI / 180;
@@ -89,6 +89,38 @@ void main() {
   gl_FragColor = vec4(c, a);
 }`;
 
+/* --------------------------------------------------------------- walk mask */
+/* Where a person may stand, as a bitmap, so movement can be continuous and
+   still refuse to walk through the kitchen counter. */
+const walk = { ready: false };
+
+function initWalkMask(w) {
+  if (!w) return;
+  const raw = atob(w.bits);
+  const bytes = new Uint8Array(raw.length);
+  for (let i = 0; i < raw.length; i++) bytes[i] = raw.charCodeAt(i);
+  Object.assign(walk, w, { bytes, ready: true });
+}
+
+/** three.js x/z -> is that a standable cell? */
+function standable(x, z) {
+  if (!walk.ready) return true;
+  const by = -z;                                  // three z is -blender y
+  const i = Math.floor((x - walk.x0) / walk.step);
+  const j = Math.floor((by - walk.y0) / walk.step);
+  if (i < 0 || j < 0 || i >= walk.nx || j >= walk.ny) return false;
+  const bit = j * walk.nx + i;
+  return (walk.bytes[bit >> 3] >> (7 - (bit & 7))) & 1;
+}
+
+/** Slide along whatever wall was hit instead of stopping dead. */
+function moveWithin(pos, dx, dz) {
+  if (standable(pos.x + dx, pos.z + dz)) { pos.x += dx; pos.z += dz; return true; }
+  if (standable(pos.x + dx, pos.z)) { pos.x += dx; return true; }
+  if (standable(pos.x, pos.z + dz)) { pos.z += dz; return true; }
+  return false;
+}
+
 /* -------------------------------------------------------------------- state */
 const app = {
   tour: null,
@@ -101,7 +133,10 @@ const app = {
   turnDir: 0,
   yawVel: 0, pitchVel: 0,
   dragging: false, moved: 0,
-  transition: null,
+  pos: null,             // live camera position, not a node index
+  glide: null,           // automated walk in progress
+  fade: null,            // panorama cross-fade in progress
+  moveDir: 0,            // -1 back, +1 forward, from held controls
   pending: null,
   guided: null,
   hotspots: [],
@@ -227,6 +262,23 @@ async function ensureNode(id) {
   return n;
 }
 
+/* With continuous walking you can cross into a neighbouring panorama at any
+   moment, so the ones you might reach need their textures built, not merely
+   their files cached -- nearestNode() will not switch to one that is not
+   ready. The base tier is ~65 kB each and BASE_CACHE bounds how many stay. */
+function prefetchNeighbours(id) {
+  const n = app.nodes.get(id);
+  if (!n) return;
+  const near = n.links
+    .map(l => app.nodes.get(l))
+    .filter(Boolean)
+    .sort((a, b) =>
+      Math.hypot(a.pos[0] - n.pos[0], a.pos[2] - n.pos[2]) -
+      Math.hypot(b.pos[0] - n.pos[0], b.pos[2] - n.pos[2]))
+    .slice(0, 5);
+  for (const m of near) ensureNode(m.id).catch(() => {});
+}
+
 /** Walk a viewpoint up through the resolution tiers, sharpest last.
  *
  * The smallest tier is preloaded for every viewpoint and never thrown away --
@@ -243,6 +295,7 @@ async function upgrade(id) {
   try {
     for (let i = 1; i < tiers.length; i++) {
       const size = tiers[i];
+      if (n.maxTier && size > n.maxTier) break;
       if (app.current !== id) break;          // they walked off before it landed
       if ((n.hiSize || 0) >= size) continue;
 
@@ -399,7 +452,8 @@ function buildHotspots() {
   const shown = cur.links
     .filter(id => {
       const n = app.nodes.get(id);
-      return n && here.distanceTo(new THREE.Vector3(...n.pos)) <= MAX_HOTSPOT_DIST;
+      return n && !n.walk
+        && here.distanceTo(new THREE.Vector3(...n.pos)) <= MAX_HOTSPOT_DIST;
     })
     .slice(0, MAX_HOTSPOTS);
   for (const id of shown) {
@@ -432,29 +486,156 @@ function pickHotspot(ev) {
 }
 
 /* ---------------------------------------------------------------- navigation */
+/* The camera has a real position and moves continuously through the flat.
+ * Whichever panorama is nearest is the one being drawn, warped by its depth
+ * map to your actual position -- so between two viewpoints you get real
+ * parallax, not a slideshow. Crossing the halfway point swaps panoramas
+ * behind a short cross-fade.
+ *
+ * Candidates for "nearest" are limited to the current panorama and the ones
+ * it can see. Plain Euclidean distance would happily snap you to a viewpoint
+ * on the far side of the bedroom wall.
+ */
+const WALK_SPEED = 1.15;          // metres/second
+const SWAP_FADE = 280;            // ms to cross-fade between panoramas
+const SWAP_HYSTERESIS = 0.12;     // m the rival must beat the incumbent by
+
 function setRoomTag(node) {
   $('roomtag-text').textContent = node.label;
   $('roomblurb').textContent = node.blurb || '';
   document.title = `${node.label} — ${app.tour.title}`;
-  // so a link can point at one spot: "look at the kitchen"
-  try {
-    history.replaceState(null, '', `#${node.id}`);
-  } catch (e) { /* file:// has no history */ }
+  if (!node.walk) {
+    try {
+      history.replaceState(null, '', `#${node.id}`);
+    } catch (e) { /* file:// has no history */ }
+  }
   for (const b of $('rooms').children) {
     b.classList.toggle('on', b.dataset.room === node.room);
   }
   updateMap();
 }
 
-async function goTo(id, { turn = false, instant = false } = {}) {
-  if (id === app.current) return;
-  if (app.transition) {
-    // Taking a second click mid-walk and dropping it feels broken; hold it.
-    app.pending = { id, opts: { turn, instant } };
+function nodeVec(n) { return new THREE.Vector3(n.pos[0], n.pos[1], n.pos[2]); }
+
+/** Nearest loaded panorama to `pos`, searching only what the current one sees. */
+function nearestNode(pos) {
+  const cur = app.nodes.get(app.current);
+  if (!cur) return null;
+  const pool = [cur.id, ...cur.links];
+  let best = app.current;
+  let bestD = Math.hypot(pos.x - cur.pos[0], pos.z - cur.pos[2]) - SWAP_HYSTERESIS;
+  for (const id of pool) {
+    const n = app.nodes.get(id);
+    if (!n) continue;
+    const d = Math.hypot(pos.x - n.pos[0], pos.z - n.pos[2]);
+    if (d >= bestD) continue;
+    if (!n.cubeBase || !n.depthTex) {
+      // walking towards something not built yet: start it, keep what we have
+      ensureNode(id).catch(() => {});
+      continue;
+    }
+    bestD = d; best = id;
+  }
+  return best;
+}
+
+/** Make `id` the panorama being drawn, cross-fading from the current one. */
+function activate(id, { fade = true } = {}) {
+  if (id === app.current && app.shells.has(id)) return;
+  const node = app.nodes.get(id);
+  if (!node || !node.cubeBase || !node.depthTex) return;
+  const fromId = app.current;
+  const shellB = makeShell(node);
+
+  if (!fade || !fromId || !app.shells.has(fromId)) {
+    shellB.material.uniforms.uOpacity.value = 1;
+    shellB.material.uniforms.uWarp.value = 0;
+    shellB.material.transparent = false;
+    shellB.renderOrder = 0;
+    app.current = id;
+    releaseShellsExcept(new Set([id]));
+    setRoomTag(node);
+    buildHotspots();
+    upgrade(id);
+    prefetchNeighbours(id);
     return;
   }
+
+  const shellA = app.shells.get(fromId);
+  // The outgoing panorama is the backdrop, so it must never punch holes;
+  // the incoming one may, and what shows through is the backdrop.
+  shellA.material.transparent = false;
+  shellA.material.depthTest = false;
+  shellA.material.depthWrite = false;
+  shellA.material.uniforms.uOpacity.value = 1;
+  shellA.material.uniforms.uWarp.value = 0;
+  shellA.renderOrder = 0;
+  shellB.material.transparent = true;
+  shellB.material.depthTest = false;
+  shellB.material.depthWrite = false;
+  shellB.material.uniforms.uOpacity.value = 0;
+  shellB.renderOrder = 1;
+
+  app.current = id;
+  setRoomTag(node);
+  upgrade(id);
+  prefetchNeighbours(id);
+  buildHotspots();
+  app.fade = { fromId, toId: id, t0: performance.now(),
+               dur: REDUCED_MOTION ? 80 : SWAP_FADE };
+}
+
+function stepFade(now) {
+  const f = app.fade;
+  if (!f) return;
+  const shellB = app.shells.get(f.toId);
+  if (!shellB) { app.fade = null; return; }
+  const t = clamp((now - f.t0) / f.dur, 0, 1);
+  shellB.material.uniforms.uOpacity.value = t;
+  if (t >= 1) {
+    shellB.material.transparent = false;
+    shellB.material.depthTest = true;
+    shellB.material.depthWrite = true;
+    shellB.renderOrder = 0;
+    releaseShellsExcept(new Set([f.toId]));
+    app.fade = null;
+  }
+}
+
+/** Walk to a position, steering and easing the view as we go. */
+function glideTo(target, { turn = null, dur = null } = {}) {
+  const from = app.pos.clone();
+  const dist = Math.hypot(target.x - from.x, target.z - from.z);
+  const d = dur != null ? dur
+    : (REDUCED_MOTION ? 240 : clamp(320 + dist * 420, 380, 1500));
+  app.glide = {
+    from, to: target.clone(), t0: performance.now(), dur: d * (app.durScale || 1),
+    yaw0: app.yaw, dYaw: turn == null ? 0 : shortestAngle(app.yaw, turn),
+    pitch0: app.pitch, dPitch: turn == null ? 0 : DEFAULT_PITCH - app.pitch,
+  };
+}
+
+function stepGlide(now) {
+  const g = app.glide;
+  if (!g) return;
+  const raw = clamp((now - g.t0) / g.dur, 0, 1);
+  const t = easeInOut(raw);
+  app.pos.x = lerp(g.from.x, g.to.x, t);
+  app.pos.z = lerp(g.from.z, g.to.z, t);
+  if (g.dYaw) app.yaw = g.yaw0 + g.dYaw * t;
+  if (g.dPitch) app.pitch = g.pitch0 + g.dPitch * t;
+  if (raw >= 1) {
+    app.glide = null;
+    const q = app.pending;
+    if (q) { app.pending = null; goTo(q.id, q.opts); }
+  }
+}
+
+/** Public: walk to a named viewpoint. */
+async function goTo(id, { turn = false, instant = false } = {}) {
   const to = app.nodes.get(id);
   if (!to) return;
+  if (app.glide && !instant) { app.pending = { id, opts: { turn, instant } }; return; }
 
   $('loadbar').classList.remove('hidden');
   $('loadbar-fill').style.width = '20%';
@@ -476,94 +657,36 @@ async function goTo(id, { turn = false, instant = false } = {}) {
     $('loadbar-fill').style.width = '0';
   }, 300);
 
-  const from = app.current ? app.nodes.get(app.current) : null;
-  const shellB = makeShell(to);
-
-  if (!from || instant) {
-    camera.position.set(to.pos[0], to.pos[1], to.pos[2]);
-    shellB.material.uniforms.uOpacity.value = 1;
-    app.current = id;
-    releaseShellsExcept(new Set([id]));
-    setRoomTag(to);
-    buildHotspots();
-    upgrade(id);
-    prefetchNeighbours(id);
+  if (instant || !app.current) {
+    app.pos.set(to.pos[0], to.pos[1], to.pos[2]);
+    app.glide = null;
+    activate(id, { fade: false });
     return;
   }
+  glideTo(nodeVec(to), { turn: turn ? to.heading * DEG : null });
+}
 
-  const shellA = app.shells.get(from.id);
-  for (const s of [shellA, shellB]) {
-    s.material.transparent = true;
-    s.material.depthTest = false;
-    s.material.depthWrite = false;
+/** Called every frame: move, then make sure the right panorama is showing. */
+function stepMovement(now, dt) {
+  if (app.glide) { stepGlide(now); }
+  else if (app.moveDir) {
+    const v = WALK_SPEED * dt * app.moveDir;
+    moveWithin(app.pos, -Math.sin(app.yaw) * v, -Math.cos(app.yaw) * v);
   }
-  shellA.renderOrder = 0;
-  shellB.renderOrder = 1;
-  shellB.material.uniforms.uOpacity.value = 0;
+  const want = nearestNode(app.pos);
+  if (want && want !== app.current) activate(want);
+  camera.position.copy(app.pos);
 
-  for (const h of app.hotspots) h.visible = false;
-  app.turnDir = 0;
-  $('turn-left').classList.add('hidden');
-  $('turn-right').classList.add('hidden');
-
-  const a = new THREE.Vector3(...from.pos);
-  const b = new THREE.Vector3(...to.pos);
-  const dist = a.distanceTo(b);
-  const dur = (REDUCED_MOTION ? 260 : clamp(560 + dist * 190, 620, 1500))
-    * (app.durScale || 1);
-  const yaw0 = app.yaw;
-  const dYaw = turn ? shortestAngle(app.yaw, to.heading * DEG) : 0;
-  const pitch0 = app.pitch;
-  const dPitch = turn ? DEFAULT_PITCH - app.pitch : 0;
-
-  app.current = id;
-  setRoomTag(to);
-  upgrade(id);
-
-  app.transition = {
-    t0: performance.now(), dur, a, b, shellA, shellB, yaw0, dYaw, pitch0, dPitch,
-    done() {
-      shellB.material.transparent = false;
-      shellB.material.depthTest = true;
-      shellB.material.depthWrite = true;
-      shellB.material.uniforms.uOpacity.value = 1;
-      shellB.material.uniforms.uWarp.value = 0;
-      shellB.renderOrder = 0;
-      releaseShellsExcept(new Set([id]));
-      buildHotspots();
-      prefetchNeighbours(id);
-      $('turn-left').classList.remove('hidden');
-      $('turn-right').classList.remove('hidden');
-      app.transition = null;
-      const q = app.pending;
-      if (q) { app.pending = null; goTo(q.id, q.opts); }
-    },
-  };
-}
-
-function stepTransition(now) {
-  const tr = app.transition;
-  if (!tr) return;
-  const raw = clamp((now - tr.t0) / tr.dur, 0, 1);
-  const t = easeInOut(raw);
-  camera.position.lerpVectors(tr.a, tr.b, t);
-  tr.shellB.material.uniforms.uOpacity.value = smoothstep(0.12, 0.92, raw);
-  // how far each panorama is being viewed from off its own centre
-  const WARP_FULL = 0.9;
-  tr.shellA.material.uniforms.uWarp.value =
-    clamp(camera.position.distanceTo(tr.a) / WARP_FULL, 0, 1);
-  tr.shellB.material.uniforms.uWarp.value =
-    clamp(camera.position.distanceTo(tr.b) / WARP_FULL, 0, 1);
-  if (tr.dYaw) app.yaw = tr.yaw0 + tr.dYaw * t;
-  if (tr.dPitch) app.pitch = tr.pitch0 + tr.dPitch * t;
-  if (raw >= 1) tr.done();
-}
-
-function prefetchNeighbours(id) {
-  const n = app.nodes.get(id);
-  if (!n) return;
-  // whichever way they step next, the depth map is already here
-  n.links.slice(0, 4).forEach(l => { ensureDepth(l).catch(() => {}); });
+  // how far off its own centre each visible panorama is being viewed from
+  const WARP_FULL = 0.85;
+  for (const [id, mesh] of app.shells) {
+    if (app.fade && id === app.fade.fromId) continue;   // backdrop: no holes
+    const n = app.nodes.get(id);
+    const d = Math.hypot(app.pos.x - n.pos[0], app.pos.z - n.pos[2]);
+    mesh.material.uniforms.uWarp.value =
+      app.shells.size > 1 ? clamp(d / WARP_FULL, 0, 1) : 0;
+  }
+  stepFade(now);
 }
 
 /* -------------------------------------------------------------- guided tour */
@@ -593,7 +716,7 @@ async function advanceGuided() {
 
 function stepGuided(now, dt) {
   const g = app.guided;
-  if (!g || app.transition) return;
+  if (!g || app.glide) return;
   if (now > g.spin) app.yaw += 0.16 * dt;
   if (now > g.wait) { g.wait = Infinity; advanceGuided(); }
 }
@@ -702,7 +825,7 @@ function bindControls(el) {
     }
 
     if (!app.dragging || ev.pointerId !== pid) {
-      if (app.transition) return;
+      if (app.glide) return;
       const h = pickHotspot(ev);
       if (h !== app.hovered) {
         if (app.hovered) app.hovered.material.opacity = 0.85;
@@ -743,7 +866,7 @@ function bindControls(el) {
     app.dragging = false;
     // a long pause before releasing is a park, not a flick
     if (performance.now() - lastT > 120) app.yawVel = app.pitchVel = 0;
-    if (app.moved < 8 && !app.transition) {
+    if (app.moved < 8 && !app.glide) {
       const h = pickHotspot(ev);
       const target = h ? h.userData.nodeId : pickFloorTarget(ev);
       if (target) {
@@ -798,6 +921,26 @@ function bindControls(el) {
   holdArrow($('turn-left'), -1);
   holdArrow($('turn-right'), 1);
 
+  const walkBtn = $('walk');
+  const walkStart = ev => {
+    ev.preventDefault();
+    app.walkBtn = true;
+    app.moveDir = 1;
+    app.glide = null;               // a held walk overrides an automated one
+    hideHint();
+    if (app.guided) stopGuided();
+    walkBtn.setPointerCapture?.(ev.pointerId);
+  };
+  const walkStop = () => { app.walkBtn = false; app.moveDir = 0; };
+  walkBtn.addEventListener('pointerdown', walkStart);
+  walkBtn.addEventListener('pointerup', walkStop);
+  walkBtn.addEventListener('pointercancel', walkStop);
+  walkBtn.addEventListener('pointerleave', walkStop);
+  walkBtn.addEventListener('keydown', ev => {
+    if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); app.walkBtn = true; app.moveDir = 1; }
+  });
+  walkBtn.addEventListener('keyup', walkStop);
+
   /* ---- keyboard: hold to keep turning rather than stepping ---- */
   const keys = new Set();
   window.addEventListener('keydown', ev => {
@@ -806,7 +949,7 @@ function bindControls(el) {
     if (ev.key === 'Enter' || ev.key === ' ') {
       // walk to whichever reachable viewpoint is most nearly straight ahead
       const cur = app.nodes.get(app.current);
-      if (!cur || app.transition) return;
+      if (!cur || app.glide) return;
       const fx = -Math.sin(app.yaw), fz = -Math.cos(app.yaw);
       let best = null, bestDot = 0.55;
       for (const id of cur.links) {
@@ -822,10 +965,21 @@ function bindControls(el) {
     if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(ev.key)) return;
     ev.preventDefault();
     keys.add(ev.key);
+    // up/down walk rather than tilt: far more useful in a tour, and it is
+    // what people expect from Street View. Pitch stays on drag.
+    if (ev.key === 'ArrowUp') app.moveDir = 1;
+    if (ev.key === 'ArrowDown') app.moveDir = -1;
     hideHint();
   });
-  window.addEventListener('keyup', ev => keys.delete(ev.key));
-  window.addEventListener('blur', () => { keys.clear(); app.turnDir = 0; });
+  window.addEventListener('keyup', ev => {
+    keys.delete(ev.key);
+    if (ev.key === 'ArrowUp' || ev.key === 'ArrowDown') {
+      if (!keys.has('ArrowUp') && !keys.has('ArrowDown') && !app.walkBtn) app.moveDir = 0;
+    }
+  });
+  window.addEventListener('blur', () => {
+    keys.clear(); app.turnDir = 0; app.moveDir = 0; app.walkBtn = false;
+  });
   app._keys = keys;
 }
 
@@ -860,6 +1014,7 @@ function buildMap() {
   svg.appendChild(cone);
 
   for (const n of app.tour.nodes) {
+    if (n.walk) continue;   // not a destination
     const { x, y } = planXY(n);
     const g = document.createElementNS(ns, 'g');
     g.setAttribute('class', 'mapdot');
@@ -890,11 +1045,25 @@ function buildMap() {
   }
 }
 
+function nearestNamed() {
+  const cur = app.nodes.get(app.current);
+  if (!cur) return null;
+  if (!cur.walk) return cur.id;
+  let best = null, bestD = Infinity;
+  for (const n of app.tour.nodes) {
+    if (n.walk) continue;
+    const d = Math.hypot(cur.pos[0] - n.pos[0], cur.pos[2] - n.pos[2]);
+    if (d < bestD) { bestD = d; best = n.id; }
+  }
+  return best;
+}
+
 function updateMap() {
   const svg = $('map-svg');
   if (!svg) return;
+  const here = nearestNamed();
   for (const g of svg.querySelectorAll('.mapdot')) {
-    const on = g.dataset.id === app.current;
+    const on = g.dataset.id === here;
     const c = g.querySelector('circle');
     c.setAttribute('r', on ? 2.8 : 1.7);
     c.setAttribute('fill', on ? '#9a5b2c' : 'rgba(255,255,255,.9)');
@@ -903,9 +1072,8 @@ function updateMap() {
 
 function updateCone() {
   const cone = document.getElementById('map-cone');
-  const cur = app.nodes.get(app.current);
-  if (!cone || !cur) return;
-  const { x, y } = planXY(cur);
+  if (!cone || !app.pos) return;
+  const { x, y } = planXY({ pos: [app.pos.x, app.pos.y, app.pos.z] });
   // yaw 0 looks down -Z (three) == +y in blender == up on the plan
   const half = (app.fov * DEG) / 2;
   const R = 11;
@@ -985,30 +1153,23 @@ document.addEventListener('visibilitychange', () => {
   }
 });
 
-function frame(now) {
-  if (!running) return;
-  requestAnimationFrame(frame);
-  const dt = Math.min((now - lastFrame) / 1000, 0.1);
-  lastFrame = now;
-
-  if (!app.dragging && !app.transition) {
+/* The body of a frame, separated from the scheduling so it can be stepped
+   deterministically -- browsers stop requestAnimationFrame for a hidden tab,
+   which otherwise makes anything time-driven impossible to test. */
+function tick(now, dt) {
+  if (!app.dragging && !app.glide) {
     const dtMs = dt * 1000;
     const keys = app._keys;
     let turn = app.turnDir;
-    let tilt = 0;
+    const tilt = 0;
     if (keys) {
       if (keys.has('ArrowLeft')) turn -= 1;
       if (keys.has('ArrowRight')) turn += 1;
-      if (keys.has('ArrowUp')) tilt += 1;
-      if (keys.has('ArrowDown')) tilt -= 1;
+
     }
     if (turn) {
       app.yaw -= turn * TURN_SPEED * dt;
       app.yawVel = 0;
-    }
-    if (tilt) {
-      app.pitch = clamp(app.pitch + tilt * TURN_SPEED * 0.6 * dt, -PITCH_LIMIT, PITCH_LIMIT);
-      app.pitchVel = 0;
     }
     if (!turn && !tilt) {
       // velocities are radians per millisecond, so the glide is the same
@@ -1023,7 +1184,7 @@ function frame(now) {
     }
   }
 
-  stepTransition(now);
+  stepMovement(now, dt);
   stepGuided(now, dt);
 
   camera.rotation.set(app.pitch, app.yaw, 0, 'YXZ');
@@ -1033,6 +1194,14 @@ function frame(now) {
   }
   updateCone();
   renderer.render(scene, camera);
+}
+
+function frame(now) {
+  if (!running) return;
+  requestAnimationFrame(frame);
+  const dt = Math.min((now - lastFrame) / 1000, 0.1);
+  lastFrame = now;
+  tick(now, dt);
 }
 
 async function boot() {
@@ -1054,14 +1223,18 @@ async function boot() {
   camera = new THREE.PerspectiveCamera(app.fov, 1, 0.05, 120);
   camera.rotation.order = 'YXZ';
   raycaster = new THREE.Raycaster();
+  app.pos = new THREE.Vector3(0, app.tourEye || 1.55, 0);
   ringTex = makeRingTexture();
 
   window.__tour = app;   // debug handle: __tour.yaw / .fov / .goTo(id) / .durScale
   app.goTo = goTo;
+  app._tick = tick;        // step a frame by hand (testing)
   app._three = { get camera() { return camera; }, get renderer() { return renderer; },
                  get scene() { return scene; } };
 
   app.tour = await (await fetch(`data/tour.json?v=${BUILD}`)).json();
+  app.pos.y = app.tour.eye;
+  initWalkMask(app.tour.walk);
   for (const n of app.tour.nodes) app.nodes.set(n.id, n);
   $('splash-title').textContent = app.tour.title;
   document.title = app.tour.title;
