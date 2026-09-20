@@ -34,6 +34,11 @@ def parse_args():
     p.add_argument("--nodes", required=True)
     p.add_argument("--out", required=True)
     p.add_argument("--width", type=int, default=256)
+    p.add_argument("--shard", default=None,
+                   help="I/N: do only every Nth viewpoint (for running "
+                        "several processes at once)")
+    p.add_argument("--skip-graph", action="store_true",
+                   help="depth maps only; leave the visibility graph alone")
     return p.parse_args(argv)
 
 
@@ -67,6 +72,10 @@ def main():
     dg = bpy.context.evaluated_depsgraph_get()
 
     nodes = json.load(open(a.nodes))["nodes"]
+    if a.shard:
+        i, n = (int(v) for v in a.shard.split("/"))
+        nodes = [nd for k, nd in enumerate(nodes) if k % n == i]
+        print(f"shard {i}/{n}: {len(nodes)} viewpoints", flush=True)
     W = a.width
     H = W // 2
 
@@ -100,10 +109,15 @@ def main():
         print(f"[depth] {n['id']} {W}x{H} nearest={near:.2f}m {time.time()-t:.0f}s",
               flush=True)
 
+    if a.skip_graph:
+        print("[done] depth only (graph skipped)", flush=True)
+        return
+
     # --- visibility graph -------------------------------------------------
     # A pair is linked when the straight line between the two eye points is
     # clear at eye height and at knee height (so we do not "walk" through a
     # counter that happens to sit below the eye line).
+    nodes = json.load(open(a.nodes))["nodes"]     # graph spans everything
     links = {n["id"]: [] for n in nodes}
     for i, A in enumerate(nodes):
         for B in nodes[i + 1:]:

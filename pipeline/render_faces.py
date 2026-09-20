@@ -31,6 +31,9 @@ def parse_args():
     p.add_argument("--only", default=None, help="comma separated node ids")
     p.add_argument("--kind", choices=["all", "walk", "named"], default="all",
                    help="walk = only the dense walking viewpoints")
+    p.add_argument("--shard", default=None,
+                   help="I/N: render only every Nth viewpoint, so several "
+                        "processes can share the GPU")
     return p.parse_args(argv)
 
 
@@ -121,6 +124,10 @@ def main():
         nodes = [n for n in nodes if n.get("walkOnly")]
     elif a.kind == "named":
         nodes = [n for n in nodes if not n.get("walkOnly")]
+    if a.shard:
+        i, n = (int(v) for v in a.shard.split("/"))
+        nodes = [nd for k, nd in enumerate(nodes) if k % n == i]
+        print(f"[shard] {i}/{n}: {len(nodes)} viewpoints", flush=True)
 
     total = len(nodes) * 6
     done = 0
