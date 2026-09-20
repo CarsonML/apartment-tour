@@ -13,7 +13,7 @@
 <meta property="og:image" content="assets/poster.jpg">
 <meta name="twitter:card" content="summary_large_image">
 <link rel="preload" as="image" href="assets/poster-blur.jpg">
-<link rel="stylesheet" href="style.css?v=30484396">
+<link rel="stylesheet" href="style.css?v=ce081b73">
 </head>
 <body>
 
@@ -36,10 +36,13 @@
     <div class="card">
       <h2>How to look around</h2>
       <ul class="howto">
+        <li><span class="ico" aria-hidden="true">↔</span>
+            <b>Use the arrows at the left and right</b> to turn.
+            Hold one down to keep turning.</li>
         <li><span class="ico" aria-hidden="true">✋</span>
-            <b>Hold down the mouse and drag</b> to turn and look around the room.</li>
+            <b>Or hold the mouse button and drag</b> to look around.</li>
         <li><span class="ico" aria-hidden="true">⭕</span>
-            <b>Click a circle on the floor</b> to walk to that spot.</li>
+            <b>Click anywhere on the floor</b> to walk to that part of the room.</li>
         <li><span class="ico" aria-hidden="true">🏠</span>
             <b>Use the buttons at the bottom</b> to jump straight to a room.</li>
         <li><span class="ico" aria-hidden="true">▶</span>
@@ -58,9 +61,17 @@
     </div>
   </div>
 
-  <div id="hint" class="hidden">Hold down the mouse and drag to look around</div>
+  <div id="hint" class="hidden">Drag to look around · click the floor to walk there</div>
 
   <div id="spot-label" class="hidden"></div>
+
+  <!-- turning without having to drag: press and hold, or just click -->
+  <button id="turn-left" class="turn" aria-label="Turn left">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M15 4 7 12l8 8"/></svg>
+  </button>
+  <button id="turn-right" class="turn" aria-label="Turn right">
+    <svg viewBox="0 0 24 24" aria-hidden="true"><path d="M9 4l8 8-8 8"/></svg>
+  </button>
 
   <div id="loadbar" class="hidden"><div id="loadbar-fill"></div></div>
 
@@ -93,6 +104,6 @@
 <script type="importmap">
 { "imports": { "three": "./vendor/three.module.js" } }
 </script>
-<script type="module" src="app.js?v=30484396"></script>
+<script type="module" src="app.js?v=ce081b73"></script>
 </body>
 </html>

@@ -20,7 +20,7 @@ import * as THREE from 'three';
 
 THREE.ColorManagement.enabled = false;   // see note (1) above
 
-const BUILD = '30484396';   // stamped by pipeline/version.py
+const BUILD = 'ce081b73';   // stamped by pipeline/version.py
 
 const FACES = ['px', 'nx', 'py', 'ny', 'pz', 'nz'];
 const DEG = Math.PI / 180;
@@ -98,6 +98,7 @@ const app = {
   hiOrder: [],           // LRU of ids holding a high-res cube texture
   baseOrder: [],         // LRU of ids holding a base cube texture
   yaw: 0, pitch: DEFAULT_PITCH, fov: 72, zoom: 1,
+  turnDir: 0,
   yawVel: 0, pitchVel: 0,
   dragging: false, moved: 0,
   transition: null,
@@ -501,6 +502,9 @@ async function goTo(id, { turn = false, instant = false } = {}) {
   shellB.material.uniforms.uOpacity.value = 0;
 
   for (const h of app.hotspots) h.visible = false;
+  app.turnDir = 0;
+  $('turn-left').classList.add('hidden');
+  $('turn-right').classList.add('hidden');
 
   const a = new THREE.Vector3(...from.pos);
   const b = new THREE.Vector3(...to.pos);
@@ -528,6 +532,8 @@ async function goTo(id, { turn = false, instant = false } = {}) {
       releaseShellsExcept(new Set([id]));
       buildHotspots();
       prefetchNeighbours(id);
+      $('turn-left').classList.remove('hidden');
+      $('turn-right').classList.remove('hidden');
       app.transition = null;
       const q = app.pending;
       if (q) { app.pending = null; goTo(q.id, q.opts); }
@@ -593,11 +599,67 @@ function stepGuided(now, dt) {
 }
 
 /* ------------------------------------------------------------------ controls */
-function dragScale() { return (app.fov * DEG) / renderer.domElement.clientHeight; }
+
+/* A strict 1:1 drag -- where the pixel you grabbed stays under the cursor --
+   is the "correct" mapping and is horrible to use: turning right round took
+   2000 px of dragging, so you physically could not look behind you without
+   letting go and starting again.  A gain of 2 puts a half turn inside one
+   screen width. */
+const DRAG_GAIN = 2.0;
+const TURN_SPEED = 80 * DEG;      // radians/second for the arrows and keys
+const TURN_NUDGE = 32 * DEG;      // a plain click on an arrow
+const GLIDE_HALFLIFE = 70;        // ms for a flick to lose half its speed
+/* Total coast after release is roughly vel * HALFLIFE / ln2, so this cap is
+   what keeps a hard flick from spinning the room: 0.006 rad/ms works out to
+   about 35 degrees of glide, which reads as momentum rather than a loss of
+   control. */
+const VEL_CLAMP = 0.006;
+const PITCH_LIMIT = 85 * DEG;
+const WALK_RADIUS = 2.6;          // how near a floor click must land
+
+function dragScale() {
+  return DRAG_GAIN * (app.fov * DEG) / renderer.domElement.clientHeight;
+}
+
+/* Where a click on the floor points, so the whole floor is a target rather
+   than just the rings.  Rings show where you *can* go; this makes hitting
+   them forgiving. */
+const FLOOR = new THREE.Plane(new THREE.Vector3(0, 1, 0), 0);
+
+function pickFloorTarget(ev) {
+  const cur = app.nodes.get(app.current);
+  if (!cur) return null;
+  const r = renderer.domElement.getBoundingClientRect();
+  const p = new THREE.Vector2(
+    ((ev.clientX - r.left) / r.width) * 2 - 1,
+    -((ev.clientY - r.top) / r.height) * 2 + 1
+  );
+  raycaster.setFromCamera(p, camera);
+  if (raycaster.ray.direction.y > -0.02) return null;   // aimed at or above the horizon
+  const hit = new THREE.Vector3();
+  if (!raycaster.ray.intersectPlane(FLOOR, hit)) return null;
+  let best = null, bestD = WALK_RADIUS;
+  for (const id of cur.links) {
+    const n = app.nodes.get(id);
+    if (!n) continue;
+    const d = Math.hypot(n.pos[0] - hit.x, n.pos[2] - hit.z);
+    if (d < bestD) { bestD = d; best = id; }
+  }
+  return best;
+}
 
 function bindControls(el) {
-  let last = null, pid = null;
-  const pinch = { active: false, d0: 0, fov0: 0, ids: new Map() };
+  let pid = null, last = null, lastT = 0;
+  const pinch = { active: false, d0: 0, zoom0: 1, ids: new Map() };
+
+  const showLabel = (id, x, y) => {
+    const lab = $('spot-label');
+    if (!id) { lab.classList.add('hidden'); return; }
+    lab.textContent = `Walk to the ${app.nodes.get(id).label.toLowerCase()}`;
+    lab.style.left = `${x}px`;
+    lab.style.top = `${y - 46}px`;
+    lab.classList.remove('hidden');
+  };
 
   el.addEventListener('pointerdown', ev => {
     pinch.ids.set(ev.pointerId, { x: ev.clientX, y: ev.clientY });
@@ -605,16 +667,20 @@ function bindControls(el) {
       const [p, q] = [...pinch.ids.values()];
       pinch.active = true;
       pinch.d0 = Math.hypot(p.x - q.x, p.y - q.y);
-      pinch.fov0 = app.zoom;
+      pinch.zoom0 = app.zoom;
       app.dragging = false;
       return;
     }
     if (pinch.ids.size > 1) return;
-    el.setPointerCapture(ev.pointerId);
+    // Capture keeps the drag alive if the cursor leaves the canvas. It can
+    // throw for a pointer the browser no longer considers active, which must
+    // not take the whole drag down with it.
+    try { el.setPointerCapture(ev.pointerId); } catch (e) { /* non-fatal */ }
     pid = ev.pointerId;
     app.dragging = true;
     app.moved = 0;
     last = { x: ev.clientX, y: ev.clientY };
+    lastT = performance.now();
     app.yawVel = app.pitchVel = 0;
     el.classList.add('dragging');
     hideHint();
@@ -628,42 +694,43 @@ function bindControls(el) {
     if (pinch.active && pinch.ids.size >= 2) {
       const [p, q] = [...pinch.ids.values()];
       const d = Math.hypot(p.x - q.x, p.y - q.y);
-      if (pinch.d0 > 0) {
-        app.zoom = clamp(pinch.fov0 * (pinch.d0 / d), 0.45, 1.25);
+      if (pinch.d0 > 0 && d > 0) {
+        app.zoom = clamp(pinch.zoom0 * (pinch.d0 / d), 0.45, 1.25);
         applyZoom();
       }
       return;
     }
+
     if (!app.dragging || ev.pointerId !== pid) {
-      if (!app.transition) {
-        const h = pickHotspot(ev);
-        if (h !== app.hovered) {
-          if (app.hovered) app.hovered.material.opacity = 0.85;
-          app.hovered = h;
-          if (h) h.material.opacity = 1;
-          el.style.cursor = h ? 'pointer' : '';
-        }
-        const lab = $('spot-label');
-        if (h) {
-          const n = app.nodes.get(h.userData.nodeId);
-          lab.textContent = `Walk to the ${n.label.toLowerCase()}`;
-          lab.style.left = `${ev.clientX}px`;
-          lab.style.top = `${ev.clientY - 46}px`;
-          lab.classList.remove('hidden');
-        } else {
-          lab.classList.add('hidden');
-        }
+      if (app.transition) return;
+      const h = pickHotspot(ev);
+      if (h !== app.hovered) {
+        if (app.hovered) app.hovered.material.opacity = 0.85;
+        app.hovered = h;
+        if (h) h.material.opacity = 1;
       }
+      const target = h ? h.userData.nodeId : pickFloorTarget(ev);
+      el.style.cursor = target ? 'pointer' : '';
+      showLabel(target, ev.clientX, ev.clientY);
       return;
     }
+
+    const now = performance.now();
+    const dt = Math.max(1, now - lastT);
     const dx = ev.clientX - last.x, dy = ev.clientY - last.y;
     last = { x: ev.clientX, y: ev.clientY };
+    lastT = now;
     app.moved += Math.abs(dx) + Math.abs(dy);
     const s = dragScale();
     app.yaw -= dx * s;
-    app.pitch = clamp(app.pitch - dy * s, -85 * DEG, 85 * DEG);
-    app.yawVel = -dx * s;
-    app.pitchVel = -dy * s;
+    app.pitch = clamp(app.pitch - dy * s, -PITCH_LIMIT, PITCH_LIMIT);
+    // Radians per millisecond, so a flick feels the same at any frame rate.
+    // Smoothed, because a single pointermove is noisy and the last one before
+    // release would otherwise decide the whole glide.
+    const vy = clamp(-dx * s / dt, -VEL_CLAMP, VEL_CLAMP);
+    const vp = clamp(-dy * s / dt, -VEL_CLAMP, VEL_CLAMP);
+    app.yawVel = app.yawVel * 0.6 + vy * 0.4;
+    app.pitchVel = app.pitchVel * 0.6 + vp * 0.4;
   });
 
   const end = ev => {
@@ -674,32 +741,92 @@ function bindControls(el) {
     el.classList.remove('dragging');
     if (!app.dragging) return;
     app.dragging = false;
+    // a long pause before releasing is a park, not a flick
+    if (performance.now() - lastT > 120) app.yawVel = app.pitchVel = 0;
     if (app.moved < 8 && !app.transition) {
       const h = pickHotspot(ev);
-      if (h) { $('spot-label').classList.add('hidden'); stopGuided(); goTo(h.userData.nodeId); }
+      const target = h ? h.userData.nodeId : pickFloorTarget(ev);
+      if (target) {
+        $('spot-label').classList.add('hidden');
+        stopGuided();
+        goTo(target);
+      }
     }
   };
   el.addEventListener('pointerleave', () => $('spot-label').classList.add('hidden'));
   el.addEventListener('pointerup', end);
   el.addEventListener('pointercancel', end);
 
+  /* One trackpad flick is a dozen wheel events; stepping the zoom per event
+     slammed it to the limit in a single gesture.  Scale by the distance
+     scrolled instead, gently. */
   el.addEventListener('wheel', ev => {
     ev.preventDefault();
-    app.zoom = clamp(app.zoom + Math.sign(ev.deltaY) * 0.06, 0.45, 1.25);
+    const d = clamp(ev.deltaY, -60, 60);
+    app.zoom = clamp(app.zoom * Math.exp(d * 0.0016), 0.45, 1.25);
     applyZoom();
+    hideHint();
   }, { passive: false });
 
+  /* ---- turn arrows: hold to keep turning, or just click for a nudge ---- */
+  const holdArrow = (btn, dir) => {
+    let held = false, moved = false, t0 = 0;
+    const start = ev => {
+      ev.preventDefault();
+      held = true; moved = false; t0 = performance.now();
+      app.turnDir = dir;
+      app.yawVel = 0;
+      hideHint();
+      if (app.guided) stopGuided();
+      btn.setPointerCapture?.(ev.pointerId);
+    };
+    const stop = () => {
+      if (!held) return;
+      held = false;
+      app.turnDir = 0;
+      // a tap should still do something visible
+      if (performance.now() - t0 < 180 && !moved) app.yaw -= dir * TURN_NUDGE;
+    };
+    btn.addEventListener('pointerdown', start);
+    btn.addEventListener('pointerup', stop);
+    btn.addEventListener('pointercancel', stop);
+    btn.addEventListener('pointerleave', stop);
+    btn.addEventListener('keydown', ev => {
+      if (ev.key === 'Enter' || ev.key === ' ') { ev.preventDefault(); app.yaw -= dir * TURN_NUDGE; }
+    });
+  };
+  holdArrow($('turn-left'), -1);
+  holdArrow($('turn-right'), 1);
+
+  /* ---- keyboard: hold to keep turning rather than stepping ---- */
+  const keys = new Set();
   window.addEventListener('keydown', ev => {
-    const step = 6 * DEG;
-    if (ev.key === 'ArrowLeft') app.yaw += step;
-    else if (ev.key === 'ArrowRight') app.yaw -= step;
-    else if (ev.key === 'ArrowUp') app.pitch = clamp(app.pitch + step, -85 * DEG, 85 * DEG);
-    else if (ev.key === 'ArrowDown') app.pitch = clamp(app.pitch - step, -85 * DEG, 85 * DEG);
-    else if (ev.key === 'Escape') { stopGuided(); $('help').classList.add('hidden'); }
-    else return;
+    if (ev.metaKey || ev.ctrlKey || ev.altKey) return;
+    if (ev.key === 'Escape') { stopGuided(); $('help').classList.add('hidden'); return; }
+    if (ev.key === 'Enter' || ev.key === ' ') {
+      // walk to whichever reachable viewpoint is most nearly straight ahead
+      const cur = app.nodes.get(app.current);
+      if (!cur || app.transition) return;
+      const fx = -Math.sin(app.yaw), fz = -Math.cos(app.yaw);
+      let best = null, bestDot = 0.55;
+      for (const id of cur.links) {
+        const n = app.nodes.get(id);
+        const dx = n.pos[0] - cur.pos[0], dz = n.pos[2] - cur.pos[2];
+        const len = Math.hypot(dx, dz) || 1;
+        const dot = (dx / len) * fx + (dz / len) * fz;
+        if (dot > bestDot) { bestDot = dot; best = id; }
+      }
+      if (best) { ev.preventDefault(); stopGuided(); goTo(best); }
+      return;
+    }
+    if (!['ArrowLeft', 'ArrowRight', 'ArrowUp', 'ArrowDown'].includes(ev.key)) return;
     ev.preventDefault();
+    keys.add(ev.key);
     hideHint();
   });
+  window.addEventListener('keyup', ev => keys.delete(ev.key));
+  window.addEventListener('blur', () => { keys.clear(); app.turnDir = 0; });
+  app._keys = keys;
 }
 
 let hintTimer = null;
@@ -865,12 +992,35 @@ function frame(now) {
   lastFrame = now;
 
   if (!app.dragging && !app.transition) {
-    app.yaw += app.yawVel;
-    app.pitch = clamp(app.pitch + app.pitchVel, -85 * DEG, 85 * DEG);
-    app.yawVel *= 0.90;
-    app.pitchVel *= 0.90;
-    if (Math.abs(app.yawVel) < 1e-5) app.yawVel = 0;
-    if (Math.abs(app.pitchVel) < 1e-5) app.pitchVel = 0;
+    const dtMs = dt * 1000;
+    const keys = app._keys;
+    let turn = app.turnDir;
+    let tilt = 0;
+    if (keys) {
+      if (keys.has('ArrowLeft')) turn -= 1;
+      if (keys.has('ArrowRight')) turn += 1;
+      if (keys.has('ArrowUp')) tilt += 1;
+      if (keys.has('ArrowDown')) tilt -= 1;
+    }
+    if (turn) {
+      app.yaw -= turn * TURN_SPEED * dt;
+      app.yawVel = 0;
+    }
+    if (tilt) {
+      app.pitch = clamp(app.pitch + tilt * TURN_SPEED * 0.6 * dt, -PITCH_LIMIT, PITCH_LIMIT);
+      app.pitchVel = 0;
+    }
+    if (!turn && !tilt) {
+      // velocities are radians per millisecond, so the glide is the same
+      // length in seconds whatever the frame rate
+      app.yaw += app.yawVel * dtMs;
+      app.pitch = clamp(app.pitch + app.pitchVel * dtMs, -PITCH_LIMIT, PITCH_LIMIT);
+      const decay = Math.pow(0.5, dtMs / GLIDE_HALFLIFE);
+      app.yawVel *= decay;
+      app.pitchVel *= decay;
+      if (Math.abs(app.yawVel) < 1e-6) app.yawVel = 0;
+      if (Math.abs(app.pitchVel) < 1e-6) app.pitchVel = 0;
+    }
   }
 
   stepTransition(now);

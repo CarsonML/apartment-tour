@@ -93,6 +93,26 @@ button{font:inherit;color:inherit;cursor:pointer}
   font-size:15px;font-weight:600;white-space:nowrap}
 #spot-label.hidden{display:none}
 
+.turn{position:absolute;top:50%;transform:translateY(-50%);z-index:21;
+  width:64px;height:104px;border:0;border-radius:16px;padding:0;
+  background:rgba(255,253,250,.82);box-shadow:0 4px 18px rgba(40,30,20,.20);
+  display:grid;place-items:center;color:var(--ink);
+  -webkit-tap-highlight-color:transparent;
+  transition:background .15s ease,opacity .2s ease,transform .08s ease}
+.turn svg{width:30px;height:30px;fill:none;stroke:currentColor;stroke-width:2.6;
+  stroke-linecap:round;stroke-linejoin:round}
+.turn:hover{background:#fff}
+.turn:active{background:var(--accent);color:#fff}
+#turn-left{left:14px}
+#turn-right{right:14px}
+.turn.hidden{opacity:0;pointer-events:none}
+@media (max-width:760px){
+  .turn{width:52px;height:88px}
+  .turn svg{width:26px;height:26px}
+  #turn-left{left:8px}
+  #turn-right{right:8px}
+}
+
 #loadbar{position:absolute;top:0;left:0;right:0;height:3px;z-index:30;background:transparent}
 #loadbar.hidden{opacity:0}
 #loadbar-fill{height:100%;width:0;background:var(--accent);transition:width .2s ease}
