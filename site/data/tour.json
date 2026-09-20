@@ -1,0 +1,435 @@
+{
+  "title": "Carson's apartment",
+  "start": "entry",
+  "eye": 1.55,
+  "tiers": [
+    512,
+    1024,
+    2048
+  ],
+  "depth": {
+    "width": 384,
+    "height": 192,
+    "far": 40.0
+  },
+  "plan": {
+    "image": "../assets/floorplan.png",
+    "x0": -0.4,
+    "x1": 10.55,
+    "y0": -0.95,
+    "y1": 3.35,
+    "w": 1752,
+    "h": 688
+  },
+  "rooms": [
+    {
+      "name": "Bedroom",
+      "primary": "bedroom",
+      "nodes": [
+        "bedroom",
+        "bedroom_window",
+        "doorway",
+        "bedroom_east"
+      ]
+    },
+    {
+      "name": "Living room",
+      "primary": "living_center",
+      "nodes": [
+        "living_west",
+        "living_center",
+        "living_window",
+        "living_south",
+        "entry",
+        "living_east",
+        "living_north",
+        "living_sw",
+        "living_nw"
+      ]
+    },
+    {
+      "name": "Kitchen",
+      "primary": "kitchen_west",
+      "nodes": [
+        "kitchen_west",
+        "kitchen_east"
+      ]
+    },
+    {
+      "name": "Bathroom",
+      "primary": "bathroom",
+      "nodes": [
+        "bathroom",
+        "bath_shower"
+      ]
+    }
+  ],
+  "route": [
+    "entry",
+    "living_south",
+    "living_sw",
+    "living_center",
+    "living_east",
+    "kitchen_west",
+    "kitchen_east",
+    "bath_shower",
+    "bathroom",
+    "living_window",
+    "living_north",
+    "living_nw",
+    "living_west",
+    "doorway",
+    "bedroom_window",
+    "bedroom_east",
+    "bedroom"
+  ],
+  "nodes": [
+    {
+      "id": "bedroom",
+      "label": "Bedroom",
+      "room": "Bedroom",
+      "pos": [
+        1.125,
+        1.55,
+        -2.075
+      ],
+      "heading": 112,
+      "links": [
+        "bedroom_east",
+        "bedroom_window",
+        "doorway"
+      ]
+    },
+    {
+      "id": "bedroom_window",
+      "label": "Bedroom window",
+      "room": "Bedroom",
+      "pos": [
+        0.7250000000000001,
+        1.55,
+        -0.9250000000000003
+      ],
+      "heading": 120,
+      "links": [
+        "bedroom",
+        "bedroom_east",
+        "doorway",
+        "living_south",
+        "entry"
+      ]
+    },
+    {
+      "id": "doorway",
+      "label": "Bedroom doorway",
+      "room": "Bedroom",
+      "pos": [
+        2.325,
+        1.55,
+        -0.5250000000000004
+      ],
+      "heading": -85,
+      "links": [
+        "bedroom_window",
+        "bedroom",
+        "living_center",
+        "living_south",
+        "entry",
+        "living_window",
+        "living_east",
+        "kitchen_west",
+        "kitchen_east"
+      ]
+    },
+    {
+      "id": "living_west",
+      "label": "Living room (west)",
+      "room": "Living room",
+      "pos": [
+        3.4750000000000005,
+        1.55,
+        -1.5250000000000004
+      ],
+      "heading": -80,
+      "links": [
+        "living_nw",
+        "living_center",
+        "living_north",
+        "living_sw",
+        "living_south",
+        "living_window",
+        "living_east",
+        "entry",
+        "kitchen_west"
+      ]
+    },
+    {
+      "id": "living_center",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        4.775,
+        1.55,
+        -1.2750000000000004
+      ],
+      "heading": -50,
+      "links": [
+        "living_south",
+        "living_window",
+        "living_east",
+        "living_west",
+        "entry",
+        "living_north",
+        "living_sw",
+        "living_nw",
+        "kitchen_west",
+        "doorway",
+        "kitchen_east"
+      ]
+    },
+    {
+      "id": "living_window",
+      "label": "Living room (by the window)",
+      "room": "Living room",
+      "pos": [
+        5.675000000000001,
+        1.55,
+        -2.125
+      ],
+      "heading": -140,
+      "links": [
+        "living_east",
+        "living_center",
+        "living_north",
+        "living_south",
+        "entry",
+        "living_west",
+        "living_nw",
+        "living_sw",
+        "doorway"
+      ]
+    },
+    {
+      "id": "living_south",
+      "label": "Living room (south)",
+      "room": "Living room",
+      "pos": [
+        5.2250000000000005,
+        1.55,
+        -0.375
+      ],
+      "heading": -45,
+      "links": [
+        "entry",
+        "living_center",
+        "living_east",
+        "living_sw",
+        "living_window",
+        "kitchen_west",
+        "living_west",
+        "living_north",
+        "doorway",
+        "living_nw",
+        "kitchen_east",
+        "bedroom_window"
+      ]
+    },
+    {
+      "id": "entry",
+      "label": "Front door",
+      "room": "Living room",
+      "pos": [
+        5.825,
+        1.55,
+        -0.17500000000000027
+      ],
+      "heading": -20,
+      "links": [
+        "living_south",
+        "living_east",
+        "living_center",
+        "kitchen_west",
+        "living_window",
+        "living_sw",
+        "living_west",
+        "living_north",
+        "doorway",
+        "living_nw",
+        "bedroom_window"
+      ]
+    },
+    {
+      "id": "kitchen_west",
+      "label": "Kitchen",
+      "room": "Kitchen",
+      "pos": [
+        7.075000000000001,
+        1.55,
+        -1.2750000000000004
+      ],
+      "heading": -30,
+      "links": [
+        "living_east",
+        "kitchen_east",
+        "entry",
+        "living_south",
+        "living_center",
+        "bathroom",
+        "living_sw",
+        "living_west",
+        "doorway"
+      ]
+    },
+    {
+      "id": "kitchen_east",
+      "label": "Kitchen (far end)",
+      "room": "Kitchen",
+      "pos": [
+        8.625,
+        1.55,
+        -1.2750000000000004
+      ],
+      "heading": 90,
+      "links": [
+        "bath_shower",
+        "kitchen_west",
+        "living_east",
+        "living_south",
+        "living_center",
+        "doorway"
+      ]
+    },
+    {
+      "id": "bathroom",
+      "label": "Bathroom",
+      "room": "Bathroom",
+      "pos": [
+        9.575000000000001,
+        1.55,
+        -0.2250000000000001
+      ],
+      "heading": 100,
+      "links": [
+        "bath_shower",
+        "kitchen_west"
+      ]
+    },
+    {
+      "id": "living_east",
+      "label": "Living room (east)",
+      "room": "Living room",
+      "pos": [
+        6.025,
+        1.55,
+        -1.1750000000000003
+      ],
+      "heading": -65,
+      "links": [
+        "living_window",
+        "entry",
+        "kitchen_west",
+        "living_south",
+        "living_center",
+        "living_north",
+        "living_west",
+        "living_sw",
+        "kitchen_east",
+        "living_nw",
+        "doorway"
+      ]
+    },
+    {
+      "id": "living_north",
+      "label": "Living room (north)",
+      "room": "Living room",
+      "pos": [
+        4.325,
+        1.55,
+        -2.7250000000000005
+      ],
+      "heading": -100,
+      "links": [
+        "living_nw",
+        "living_west",
+        "living_window",
+        "living_center",
+        "living_east",
+        "living_south",
+        "entry",
+        "living_sw"
+      ]
+    },
+    {
+      "id": "living_sw",
+      "label": "Living room corner",
+      "room": "Living room",
+      "pos": [
+        3.875,
+        1.55,
+        0.2749999999999999
+      ],
+      "heading": -40,
+      "links": [
+        "living_south",
+        "living_center",
+        "living_west",
+        "entry",
+        "living_east",
+        "living_nw",
+        "living_window",
+        "living_north",
+        "kitchen_west"
+      ]
+    },
+    {
+      "id": "living_nw",
+      "label": "Living room (bay)",
+      "room": "Living room",
+      "pos": [
+        3.2250000000000005,
+        1.55,
+        -2.575
+      ],
+      "heading": -125,
+      "links": [
+        "living_west",
+        "living_north",
+        "living_center",
+        "living_window",
+        "living_sw",
+        "living_south",
+        "living_east",
+        "entry"
+      ]
+    },
+    {
+      "id": "bedroom_east",
+      "label": "Bedroom (closet)",
+      "room": "Bedroom",
+      "pos": [
+        2.0250000000000004,
+        1.55,
+        -1.5250000000000004
+      ],
+      "heading": 90,
+      "links": [
+        "bedroom",
+        "bedroom_window"
+      ]
+    },
+    {
+      "id": "bath_shower",
+      "label": "Bathroom (shower)",
+      "room": "Bathroom",
+      "pos": [
+        8.875,
+        1.55,
+        -0.17500000000000027
+      ],
+      "heading": 95,
+      "links": [
+        "bathroom",
+        "kitchen_east"
+      ]
+    }
+  ]
+}

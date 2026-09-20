@@ -1,0 +1,8 @@
+{
+  "_comment": "Optional one-line captions under the room name. Delete a line to hide it. Keys are viewpoint ids from nodes.json.",
+  "entry": "",
+  "living_center": "",
+  "bedroom": "",
+  "kitchen_west": "",
+  "bathroom": ""
+}

@@ -1,0 +1,139 @@
+/* Everything here is sized for reading at arm's length on a laptop or an
+   iPad: minimum 17px body text, 56px tap targets, high contrast. */
+:root{
+  --paper:#f6f3ee;
+  --ink:#2b2622;
+  --muted:#6d635a;
+  --line:rgba(43,38,34,.14);
+  --accent:#9a5b2c;
+  --accent-ink:#fff;
+  --card:rgba(255,253,250,.97);
+  --shadow:0 12px 40px rgba(40,30,20,.22);
+  --bar-h:104px;
+}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;overflow:hidden;background:#141210;
+  -webkit-text-size-adjust:100%;overscroll-behavior:none}
+body{font:400 17px/1.5 ui-rounded,-apple-system,"Segoe UI",Roboto,"Helvetica Neue",sans-serif;
+  color:var(--ink)}
+button{font:inherit;color:inherit;cursor:pointer}
+
+#stage{position:fixed;inset:0}
+#view{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:none;
+  cursor:grab}
+#view.dragging{cursor:grabbing}
+
+/* ---------- overlays ---------- */
+.overlay{position:absolute;inset:0;z-index:40;display:grid;place-items:center;
+  padding:24px;background:rgba(28,22,18,.55);backdrop-filter:blur(10px)}
+/* the opening screen sits on a soft still of the flat rather than a black void */
+.overlay.has-poster{background:rgba(28,22,18,.5);backdrop-filter:none}
+.overlay.has-poster::before{content:"";position:absolute;inset:0;z-index:-1;
+  background:#1a1512 url("assets/poster-blur.jpg") center/cover no-repeat;
+  filter:blur(14px) saturate(.9) brightness(.62);transform:scale(1.08)}
+.overlay.hidden{display:none}
+.card{background:var(--card);border-radius:22px;box-shadow:var(--shadow);
+  padding:34px 34px 30px;max-width:480px;width:100%;text-align:center}
+.card h1{margin:0 0 6px;font-size:30px;letter-spacing:-.01em}
+.card h2{margin:0 0 14px;font-size:24px}
+.lede{margin:0 0 20px;color:var(--muted);font-size:18px}
+.status{margin:14px 0 0;color:var(--muted);font-size:15px;min-height:1.4em}
+
+.howto{list-style:none;margin:0 0 22px;padding:0;text-align:left}
+.howto li{display:flex;gap:14px;align-items:flex-start;padding:11px 0;
+  border-bottom:1px solid var(--line);font-size:17px}
+.howto li:last-child{border-bottom:0}
+.howto .ico{font-size:22px;line-height:1.2;flex:none;width:28px;text-align:center}
+
+#splash-progress{height:8px;border-radius:99px;background:rgba(43,38,34,.12);
+  overflow:hidden;margin:4px 0 0}
+#splash-bar{height:100%;width:0;border-radius:99px;background:var(--accent);
+  transition:width .3s ease}
+
+/* ---------- buttons ---------- */
+.big-btn{min-height:56px;padding:15px 26px;border-radius:14px;border:1.5px solid var(--line);
+  background:#fffdfa;font-size:18px;font-weight:600;display:inline-flex;align-items:center;
+  justify-content:center;gap:10px;transition:transform .08s ease,background .15s ease,
+  border-color .15s ease;-webkit-tap-highlight-color:transparent}
+.big-btn:hover{background:#fff;border-color:rgba(43,38,34,.3)}
+.big-btn:active{transform:scale(.97)}
+.big-btn:disabled{opacity:.5;cursor:default}
+.big-btn.primary{background:var(--accent);color:var(--accent-ink);border-color:transparent;
+  width:100%;margin-top:8px}
+.big-btn.primary:hover{background:#8a5027}
+.big-btn.on{background:var(--accent);color:var(--accent-ink);border-color:transparent}
+
+.round-btn{width:48px;height:48px;border-radius:50%;border:1.5px solid var(--line);
+  background:var(--card);font-size:22px;font-weight:700;color:var(--muted);
+  display:grid;place-items:center;box-shadow:0 4px 14px rgba(40,30,20,.16);
+  -webkit-tap-highlight-color:transparent}
+.round-btn:hover{color:var(--ink)}
+.round-btn.small{width:34px;height:34px;font-size:15px}
+
+/* ---------- hud ---------- */
+#hud{position:absolute;top:0;left:0;right:0;z-index:20;padding:18px 18px 0;
+  display:flex;align-items:flex-start;justify-content:space-between;
+  padding-top:max(18px,env(safe-area-inset-top));pointer-events:none}
+#hud>*{pointer-events:auto}
+#roomtag{background:var(--card);border-radius:22px;padding:11px 22px;font-size:19px;
+  font-weight:600;box-shadow:0 4px 18px rgba(40,30,20,.18);letter-spacing:-.01em;
+  max-width:min(460px,60vw)}
+#roomblurb{display:block;font-weight:400;font-size:15px;color:var(--muted);
+  margin-top:2px;line-height:1.35}
+#roomblurb:empty{display:none}
+.hud-right{display:flex;gap:10px}
+
+#hint{position:absolute;left:50%;top:calc(50% + 70px);transform:translateX(-50%);
+  z-index:20;background:rgba(28,22,18,.78);color:#fff;padding:12px 22px;border-radius:999px;
+  font-size:17px;pointer-events:none;transition:opacity .5s ease}
+#hint.hidden{opacity:0}
+
+#spot-label{position:absolute;z-index:22;transform:translateX(-50%);pointer-events:none;
+  background:rgba(28,22,18,.86);color:#fff;padding:8px 14px;border-radius:999px;
+  font-size:15px;font-weight:600;white-space:nowrap}
+#spot-label.hidden{display:none}
+
+#loadbar{position:absolute;top:0;left:0;right:0;height:3px;z-index:30;background:transparent}
+#loadbar.hidden{opacity:0}
+#loadbar-fill{height:100%;width:0;background:var(--accent);transition:width .2s ease}
+
+/* ---------- floor plan ---------- */
+#map{position:absolute;right:16px;z-index:20;
+  bottom:calc(var(--bar-h) + 16px + env(safe-area-inset-bottom));
+  width:min(330px,42vw)}
+#map-inner{position:relative;background:var(--card);border-radius:16px;overflow:hidden;
+  box-shadow:var(--shadow);transition:max-height .28s ease,opacity .28s ease;
+  max-height:60vh;line-height:0}
+#map.collapsed #map-inner{max-height:0;opacity:0}
+#map-img{width:100%;display:block}
+#map-svg{position:absolute;inset:0;width:100%;height:100%;overflow:visible}
+#map-toggle{position:absolute;right:6px;top:-42px;transition:transform .28s ease}
+#map.collapsed #map-toggle{transform:rotate(180deg)}
+.mapdot{cursor:pointer}
+.mapdot circle{transition:r .15s ease,fill .15s ease}
+
+/* ---------- bottom bar ---------- */
+#bar{position:absolute;left:0;right:0;bottom:0;z-index:25;display:flex;gap:12px;
+  align-items:center;padding:14px 16px;
+  padding-bottom:max(14px,env(safe-area-inset-bottom));
+  background:linear-gradient(to top,rgba(246,243,238,.97) 55%,rgba(246,243,238,0));
+  flex-wrap:wrap}
+#rooms{display:flex;gap:10px;flex-wrap:wrap;flex:1}
+#rooms .big-btn{flex:1 1 auto;min-width:118px}
+#tour-btn{flex:0 0 auto}
+
+@media (max-width:760px){
+  :root{--bar-h:190px}
+  .card{padding:26px 22px 22px}
+  .card h1{font-size:25px}
+  #map{width:44vw;right:12px}
+  #roomtag{font-size:17px;padding:9px 17px}
+  #bar{gap:9px;padding:11px 12px}
+  #rooms{gap:8px}
+  #rooms .big-btn{min-width:0;flex:1 1 44%;padding:13px 10px;font-size:16px}
+  #tour-btn{flex:1 1 100%}
+  #hint{font-size:15px;padding:10px 17px;width:max-content;max-width:88vw;text-align:center}
+}
+@media (prefers-reduced-motion:reduce){
+  *{transition-duration:.01ms !important}
+}

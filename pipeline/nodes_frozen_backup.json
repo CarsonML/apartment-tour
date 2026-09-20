@@ -1,0 +1,192 @@
+{
+  "eye": 1.55,
+  "nodes": [
+    {
+      "id": "bedroom",
+      "label": "Bedroom",
+      "room": "Bedroom",
+      "pos": [
+        1.125,
+        1.55,
+        -2.075
+      ],
+      "blender": [
+        1.125,
+        2.075,
+        1.55
+      ],
+      "heading": 112,
+      "clearance": 0.6
+    },
+    {
+      "id": "bedroom_window",
+      "label": "Bedroom window",
+      "room": "Bedroom",
+      "pos": [
+        0.7250000000000001,
+        1.55,
+        -0.9250000000000003
+      ],
+      "blender": [
+        0.725,
+        0.925,
+        1.55
+      ],
+      "heading": -105,
+      "clearance": 0.36
+    },
+    {
+      "id": "doorway",
+      "label": "Bedroom doorway",
+      "room": "Bedroom",
+      "pos": [
+        2.325,
+        1.55,
+        -0.5250000000000004
+      ],
+      "blender": [
+        2.325,
+        0.525,
+        1.55
+      ],
+      "heading": -85,
+      "clearance": 0.25
+    },
+    {
+      "id": "living_west",
+      "label": "Living room (west)",
+      "room": "Living room",
+      "pos": [
+        3.4750000000000005,
+        1.55,
+        -1.5250000000000004
+      ],
+      "blender": [
+        3.475,
+        1.525,
+        1.55
+      ],
+      "heading": -80,
+      "clearance": 0.35
+    },
+    {
+      "id": "living_center",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        4.775,
+        1.55,
+        -1.2750000000000004
+      ],
+      "blender": [
+        4.775,
+        1.275,
+        1.55
+      ],
+      "heading": -50,
+      "clearance": 1.53
+    },
+    {
+      "id": "living_window",
+      "label": "Living room window",
+      "room": "Living room",
+      "pos": [
+        5.675000000000001,
+        1.55,
+        -2.125
+      ],
+      "blender": [
+        5.675,
+        2.125,
+        1.55
+      ],
+      "heading": 120,
+      "clearance": 0.35
+    },
+    {
+      "id": "living_south",
+      "label": "Living room (south)",
+      "room": "Living room",
+      "pos": [
+        5.2250000000000005,
+        1.55,
+        -0.375
+      ],
+      "blender": [
+        5.225,
+        0.375,
+        1.55
+      ],
+      "heading": 95,
+      "clearance": 0.75
+    },
+    {
+      "id": "entry",
+      "label": "Front door",
+      "room": "Living room",
+      "pos": [
+        5.825,
+        1.55,
+        -0.17500000000000027
+      ],
+      "blender": [
+        5.825,
+        0.175,
+        1.55
+      ],
+      "heading": 73,
+      "clearance": 0.36
+    },
+    {
+      "id": "kitchen_west",
+      "label": "Kitchen",
+      "room": "Kitchen",
+      "pos": [
+        7.075000000000001,
+        1.55,
+        -1.2750000000000004
+      ],
+      "blender": [
+        7.075,
+        1.275,
+        1.55
+      ],
+      "heading": -30,
+      "clearance": 0.05
+    },
+    {
+      "id": "kitchen_east",
+      "label": "Kitchen (far end)",
+      "room": "Kitchen",
+      "pos": [
+        8.625,
+        1.55,
+        -1.2750000000000004
+      ],
+      "blender": [
+        8.625,
+        1.275,
+        1.55
+      ],
+      "heading": 90,
+      "clearance": 0.05
+    },
+    {
+      "id": "bathroom",
+      "label": "Bathroom",
+      "room": "Bathroom",
+      "pos": [
+        9.575000000000001,
+        1.55,
+        -0.2250000000000001
+      ],
+      "blender": [
+        9.575,
+        0.225,
+        1.55
+      ],
+      "heading": 100,
+      "clearance": 0.1
+    }
+  ]
+}

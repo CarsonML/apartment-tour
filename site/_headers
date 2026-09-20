@@ -1,0 +1,12 @@
+# Netlify / Cloudflare Pages. The panorama tiles are content-addressed by
+# folder, so they can be cached hard; the HTML and tour data cannot.
+/data/panos/*
+  Cache-Control: public, max-age=31536000, immutable
+/vendor/*
+  Cache-Control: public, max-age=31536000, immutable
+/assets/*
+  Cache-Control: public, max-age=604800
+/data/tour.json
+  Cache-Control: public, max-age=300
+/index.html
+  Cache-Control: public, max-age=300

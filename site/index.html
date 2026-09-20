@@ -1,0 +1,98 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#f6f3ee">
+<title>Carson's apartment</title>
+<link rel="icon" href="assets/favicon.svg">
+<meta name="description" content="A photoreal walk-through of the apartment, room by room.">
+<meta property="og:title" content="Carson's apartment">
+<meta property="og:description" content="A walk-through you can explore from your chair.">
+<meta property="og:type" content="website">
+<meta property="og:image" content="assets/poster.jpg">
+<meta name="twitter:card" content="summary_large_image">
+<link rel="preload" as="image" href="assets/poster-blur.jpg">
+<link rel="stylesheet" href="style.css?v=1e3fca55">
+</head>
+<body>
+
+<div id="stage">
+  <canvas id="view"></canvas>
+
+  <!-- first-run / loading -->
+  <div id="splash" class="overlay has-poster">
+    <div class="card">
+      <h1 id="splash-title">Carson's apartment</h1>
+      <p class="lede">A walk-through you can explore from your chair.</p>
+      <div id="splash-progress"><div id="splash-bar"></div></div>
+      <p id="splash-status" class="status">Getting things ready…</p>
+      <button id="start" class="big-btn primary" disabled>Start looking around</button>
+    </div>
+  </div>
+
+  <!-- help -->
+  <div id="help" class="overlay hidden">
+    <div class="card">
+      <h2>How to look around</h2>
+      <ul class="howto">
+        <li><span class="ico" aria-hidden="true">✋</span>
+            <b>Hold down the mouse and drag</b> to turn and look around the room.</li>
+        <li><span class="ico" aria-hidden="true">⭕</span>
+            <b>Click a circle on the floor</b> to walk to that spot.</li>
+        <li><span class="ico" aria-hidden="true">🏠</span>
+            <b>Use the buttons at the bottom</b> to jump straight to a room.</li>
+        <li><span class="ico" aria-hidden="true">▶</span>
+            <b>Press “Show me around”</b> and it will walk you through by itself.</li>
+      </ul>
+      <button id="help-close" class="big-btn primary">Got it</button>
+    </div>
+  </div>
+
+  <!-- heads-up -->
+  <div id="hud">
+    <div id="roomtag"><span id="roomtag-text">Bedroom</span><span id="roomblurb"></span></div>
+    <div class="hud-right">
+      <button id="fs" class="round-btn" title="Full screen" aria-label="Full screen">⛶</button>
+      <button id="help-open" class="round-btn" title="How to look around" aria-label="How to look around">?</button>
+    </div>
+  </div>
+
+  <div id="hint" class="hidden">Hold down the mouse and drag to look around</div>
+
+  <div id="spot-label" class="hidden"></div>
+
+  <div id="loadbar" class="hidden"><div id="loadbar-fill"></div></div>
+
+  <!-- floor plan -->
+  <div id="map">
+    <div id="map-inner">
+      <img id="map-img" alt="Floor plan of the apartment">
+      <svg id="map-svg" xmlns="http://www.w3.org/2000/svg"></svg>
+    </div>
+    <button id="map-toggle" class="round-btn small" aria-label="Hide or show the floor plan">▾</button>
+  </div>
+
+  <!-- bottom bar -->
+  <div id="bar">
+    <button id="tour-btn" class="big-btn">
+      <span class="ico" aria-hidden="true">▶</span><span id="tour-label">Show me around</span>
+    </button>
+    <div id="rooms"></div>
+  </div>
+
+  <div id="nomap" class="overlay hidden">
+    <div class="card">
+      <h2>This browser can’t show the tour</h2>
+      <p class="lede" id="nomap-msg">It needs 3D graphics (WebGL), which this browser or device has turned off.</p>
+      <p class="status">Trying a different browser, such as Chrome, Safari or Edge, usually fixes it.</p>
+    </div>
+  </div>
+</div>
+
+<script type="importmap">
+{ "imports": { "three": "./vendor/three.module.js" } }
+</script>
+<script type="module" src="app.js?v=1e3fca55"></script>
+</body>
+</html>

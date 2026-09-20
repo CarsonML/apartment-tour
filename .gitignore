@@ -1,0 +1,7 @@
+# Intermediate Cycles output: ~390 MB of PNGs that site/data/panos is built
+# from. Keep them locally so viewpoints can be repacked without re-rendering,
+# but they do not belong in version control.
+raw/
+logs/
+__pycache__/
+.DS_Store
