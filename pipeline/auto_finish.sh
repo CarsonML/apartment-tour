@@ -29,6 +29,10 @@ if ! python3 pipeline/prune_incomplete.py >> "$LOG" 2>&1; then
   say "ABORT: pruning refused; site left untouched"; exit 1
 fi
 
+say "rebuilding the walkable mask against the final viewpoint set"
+python3 pipeline/export_walkmask.py >> "$LOG" 2>&1 || {
+  say "ABORT: walk mask rebuild failed; site left untouched"; exit 1; }
+
 say "packing"
 python3 pipeline/pack.py --src raw/full --nodes pipeline/nodes_build.json \
   --out site/data/panos --tiers 2048:90,1024:86,512:84 \

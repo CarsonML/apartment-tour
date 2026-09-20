@@ -20,7 +20,7 @@ import * as THREE from 'three';
 
 THREE.ColorManagement.enabled = false;   // see note (1) above
 
-const BUILD = 'ba6fac1a';   // stamped by pipeline/version.py
+const BUILD = '3cf44f79';   // stamped by pipeline/version.py
 
 const FACES = ['px', 'nx', 'py', 'ny', 'pz', 'nz'];
 const DEG = Math.PI / 180;
@@ -119,7 +119,7 @@ function standable(x, z) {
  * off square, neither the pure-x nor the pure-z step fits, and you stick to
  * the frame. Fanning out by a few degrees lets you feel your way through the
  * gap the way you would in person. */
-const SLIDE_FAN = [0, 18, -18, 36, -36, 55, -55, 72, -72];
+const SLIDE_FAN = [0, 15, -15, 30, -30, 45, -45, 60, -60, 74, -74, 85, -85];
 
 function moveWithin(pos, dx, dz) {
   for (const deg of SLIDE_FAN) {

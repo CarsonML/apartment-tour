@@ -20,9 +20,16 @@ from mathutils import Vector
 HERE = os.path.dirname(os.path.abspath(__file__))
 
 EYE = 1.55
-KNEE = 0.50
-EYE_GAP = 0.20      # m the camera keeps from anything at head height
-KNEE_GAP = 0.14     # and from furniture at shin height
+# Only eye height matters.
+#
+# The camera is a viewpoint at 1.55 m, not a body: what it must not do is end
+# up inside a wall. Testing knee height as well sounds more physical but is
+# wrong here -- down the galley there is 0.48-0.66 m of room at eye level and
+# 0.00-0.05 m at knee level, because the base cabinets run the whole length.
+# Enforcing it made the kitchen and bathroom unwalkable and left kitchen_west
+# marooned on a one-cell island. Nobody can see that the camera's imaginary
+# legs passed through a cupboard.
+EYE_GAP = 0.13      # m the camera keeps from anything at head height
 DIRS = 12
 
 
@@ -57,13 +64,10 @@ def main():
                 continue
             x = x0 + (i + 0.5) * st
             ok = True
-            for z, gap in ((EYE, EYE_GAP), (KNEE, KNEE_GAP)):
-                p = Vector((x, y, z))
-                for d in rays:
-                    if scene.ray_cast(dg, p, Vector(d), distance=gap)[0]:
-                        ok = False
-                        break
-                if not ok:
+            p = Vector((x, y, EYE))
+            for d in rays:
+                if scene.ray_cast(dg, p, Vector(d), distance=EYE_GAP)[0]:
+                    ok = False
                     break
             if ok:
                 out[j][i] = 1
@@ -71,8 +75,24 @@ def main():
         if j % 20 == 0:
             print("row", j, file=sys.stderr)
 
+    # Every viewpoint is a standable spot by construction -- it was sited on
+    # the stricter placement mask. If this finer-grained scan disagrees, the
+    # scan is what is wrong, so make sure they are always included.
+    forced = 0
+    for nd in json.load(open(os.path.join(HERE, "nodes.json")))["nodes"]:
+        i = int((nd["pos"][0] - x0) / st)
+        j = int((-nd["pos"][2] - y0) / st)
+        for dj in (-1, 0, 1):
+            for di in (-1, 0, 1):
+                y2, x2 = j + dj, i + di
+                if 0 <= y2 < ny and 0 <= x2 < nx and not out[y2][x2]:
+                    out[y2][x2] = 1
+                    forced += 1
+                    n_ok += 1
+    print("forced walkable around viewpoints:", forced, file=sys.stderr)
+
     json.dump({"x0": x0, "y0": y0, "step": st, "nx": nx, "ny": ny,
-               "eye_gap": EYE_GAP, "knee_gap": KNEE_GAP, "walkable": out},
+               "eye_gap": EYE_GAP, "walkable": out},
               open(os.path.join(HERE, "walkable.json"), "w"))
     print(f"walkable {n_ok * st * st:.1f} m2 "
           f"(viewpoint-placement mask was {sum(map(sum, occ['free'])) * st * st:.1f} m2)",
