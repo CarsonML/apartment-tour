@@ -39,14 +39,18 @@ def main():
     total = 0
     for n in tour["nodes"]:
         base = os.path.join(SITE, "data", "panos", n["id"])
-        for tier in tour["tiers"]:
+        # Walking positions are rendered at a lower ceiling on purpose and
+        # declare it as maxTier; the viewer never asks them for more.
+        cap = n.get("maxTier") or max(tour["tiers"])
+        want_tiers = [t for t in tour["tiers"] if t <= cap]
+        for tier in want_tiers:
             for f in FACES:
                 p = os.path.join(base, str(tier), f"{f}.webp")
                 if not os.path.exists(p):
                     bad(f"{n['id']}: missing {tier}/{f}.webp")
                     continue
                 total += os.path.getsize(p)
-                if tier == max(tour["tiers"]):
+                if tier == max(want_tiers):
                     try:
                         im = Image.open(p)
                         if im.size != (tier, tier):
@@ -65,7 +69,7 @@ def main():
         for l in n.get("links", []):
             if l not in idset:
                 bad(f"{n['id']}: link to unknown viewpoint '{l}'")
-        if not n.get("links"):
+        if not n.get("links") and not n.get("walk"):
             notes.append(f"{n['id']} has no links (reachable only from the map/buttons)")
 
     for r in tour["rooms"]:
@@ -75,7 +79,8 @@ def main():
             if m not in idset:
                 bad(f"room {r['name']}: lists unknown viewpoint '{m}'")
     covered = {m for r in tour["rooms"] for m in r["nodes"]}
-    for i in idset - covered:
+    walkers = {n["id"] for n in tour["nodes"] if n.get("walk")}
+    for i in idset - covered - walkers:
         notes.append(f"{i} belongs to no room button")
 
     for r in tour.get("route", []):
@@ -104,13 +109,14 @@ def main():
     if "?v=" not in html:
         notes.append("index.html is not build-stamped (run pipeline/version.py)")
 
-    print(f"{len(tour['nodes'])} viewpoints, tiers {tour['tiers']}, "
-          f"depth {dw}x{dh}")
+    nwalk = sum(1 for n in tour["nodes"] if n.get("walk"))
+    print(f"{len(tour['nodes']) - nwalk} viewpoints + {nwalk} walking positions, "
+          f"tiers {tour['tiers']}, depth {dw}x{dh}")
     print(f"panorama + depth payload: {total/1048576:.1f} MB")
     base_tier = min(tour["tiers"])
     upfront = sum(
         os.path.getsize(os.path.join(SITE, "data", "panos", n["id"], str(base_tier), f"{f}.webp"))
-        for n in tour["nodes"] for f in FACES
+        for n in tour["nodes"] if not n.get("walk") for f in FACES
         if os.path.exists(os.path.join(SITE, "data", "panos", n["id"], str(base_tier), f"{f}.webp"))
     )
     print(f"loaded before you can start: {upfront/1048576:.2f} MB")

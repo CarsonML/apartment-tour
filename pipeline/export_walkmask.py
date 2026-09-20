@@ -14,8 +14,17 @@ HERE = os.path.dirname(os.path.abspath(__file__))
 
 
 def main():
-    occ = json.load(open(os.path.join(HERE, "occupancy.json")))
-    free = np.array(occ["free"], bool)
+    # Prefer the dedicated walkable scan; fall back to the placement mask.
+    wp = os.path.join(HERE, "walkable.json")
+    if os.path.exists(wp):
+        occ = json.load(open(wp))
+        free = np.array(occ["walkable"], bool)
+        print("using walkable.json (camera travel)")
+    else:
+        occ = json.load(open(os.path.join(HERE, "occupancy.json")))
+        free = np.array(occ["free"], bool)
+        print("WARNING: no walkable.json; falling back to the stricter "
+              "viewpoint-placement mask, which seals doorways")
     ny, nx = free.shape
     packed = np.packbits(free.reshape(-1))
     out = {
