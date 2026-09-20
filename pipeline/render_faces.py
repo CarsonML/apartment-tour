@@ -29,6 +29,8 @@ def parse_args():
     p.add_argument("--samples", type=int, default=128)
     p.add_argument("--threshold", type=float, default=0.01)
     p.add_argument("--only", default=None, help="comma separated node ids")
+    p.add_argument("--kind", choices=["all", "walk", "named"], default="all",
+                   help="walk = only the dense walking viewpoints")
     return p.parse_args(argv)
 
 
@@ -115,6 +117,10 @@ def main():
     if a.only:
         keep = set(a.only.split(","))
         nodes = [n for n in nodes if n["id"] in keep]
+    if a.kind == "walk":
+        nodes = [n for n in nodes if n.get("walkOnly")]
+    elif a.kind == "named":
+        nodes = [n for n in nodes if not n.get("walkOnly")]
 
     total = len(nodes) * 6
     done = 0

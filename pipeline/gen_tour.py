@@ -28,6 +28,10 @@ def main():
     nodes = json.load(open(a.nodes))["nodes"]
     graph = json.load(open(a.graph))
     plan = json.load(open(a.plan))
+    walk = None
+    wpath = os.path.join(os.path.dirname(os.path.abspath(a.nodes)), "walkmask.json")
+    if os.path.exists(wpath):
+        walk = json.load(open(wpath))
 
     # Optional one-line captions, keyed by node id, in pipeline/blurbs.json.
     # Left empty by default: better no caption than an invented one.
@@ -37,6 +41,14 @@ def main():
         blurbs = json.load(open(bpath))
 
     links = graph["links"]
+    # The dense walking viewpoints exist only so movement is smooth. They are
+    # never a destination: no floor ring, no map dot, no room button, and they
+    # keep their room's name so the label on screen stays right.
+    for n in nodes:
+        if n.get("walkOnly"):
+            n["walk"] = True
+            n["maxTier"] = 1024      # rendered at 1024, so do not ask for 2048
+        n.pop("walkOnly", None)
     for n in nodes:
         n["links"] = [l["to"] for l in sorted(links.get(n["id"], []),
                                               key=lambda l: l["dist"])]
@@ -46,9 +58,10 @@ def main():
             n["blurb"] = blurbs[n["id"]]
 
     ids = {n["id"] for n in nodes}
+    named = [n for n in nodes if not n.get("walk")]
     rooms = []
     for r in ROOM_ORDER:
-        members = [n["id"] for n in nodes if n["room"] == r]
+        members = [n["id"] for n in named if n["room"] == r]
         if not members:
             continue
         primary = ROOM_PRIMARY.get(r, members[0])
@@ -76,6 +89,7 @@ def main():
         "depth": {"width": graph["width"], "height": graph["height"],
                   "far": graph["far"]},
         "plan": plan,
+        "walk": walk,
         "rooms": rooms,
         "route": route,
         "nodes": nodes,
@@ -83,9 +97,11 @@ def main():
     os.makedirs(os.path.dirname(a.out), exist_ok=True)
     with open(a.out, "w") as f:
         json.dump(tour, f, indent=2)
-    print(f"wrote {a.out}: {len(nodes)} nodes, {len(rooms)} rooms")
-    for n in nodes:
-        print(f"  {n['id']:16} links -> {', '.join(n['links']) or '(none)'}")
+    nwalk = sum(1 for n in nodes if n.get("walk"))
+    print(f"wrote {a.out}: {len(nodes) - nwalk} viewpoints "
+          f"+ {nwalk} walking positions, {len(rooms)} rooms")
+    for n in named:
+        print(f"  {n['id']:16} links -> {len(n['links'])}")
 
 
 main()

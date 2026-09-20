@@ -16,11 +16,18 @@ SIZE="${SIZE:-2048}"
 SAMPLES="${SAMPLES:-128}"
 THRESHOLD="${THRESHOLD:-0.01}"
 STALL_SECS="${STALL_SECS:-540}"
+KIND="${KIND:-all}"
 POLL="${POLL:-30}"
 LOG="${LOG:-logs/render_full.log}"
 HEARTBEAT="${HEARTBEAT:-logs/heartbeat.log}"
 
-want=$(python3 -c "import json;print(len(json.load(open('pipeline/nodes.json'))['nodes'])*6)")
+want=$(KIND="$KIND" python3 -c "
+import json, os
+k=os.environ['KIND']
+ns=json.load(open('pipeline/nodes.json'))['nodes']
+if k=='walk':  ns=[n for n in ns if n.get('walkOnly')]
+if k=='named': ns=[n for n in ns if not n.get('walkOnly')]
+print(len(ns)*6)")
 count() { ls "$OUT"/*/*.png 2>/dev/null | wc -l | tr -d ' '; }
 say() { echo "$(date '+%H:%M:%S') $*" >> "$HEARTBEAT"; }
 
@@ -34,7 +41,7 @@ while [ "$(count)" -lt "$want" ]; do
   "/Applications/Blender.app/Contents/MacOS/Blender" -b "$BLEND" \
     --python pipeline/render_faces.py -- \
     --nodes pipeline/nodes.json --out "$OUT" --size "$SIZE" \
-    --samples "$SAMPLES" --threshold "$THRESHOLD" >> "$LOG" 2>&1 &
+    --samples "$SAMPLES" --threshold "$THRESHOLD" --kind "$KIND" >> "$LOG" 2>&1 &
   pid=$!
   say "  blender pid ${pid}"
 
