@@ -49,9 +49,14 @@ def main():
             n["walk"] = True
             n["maxTier"] = 1024      # rendered at 1024, so do not ask for 2048
         n.pop("walkOnly", None)
+    # The visibility graph spans every viewpoint that was *planned*; a build
+    # from a partly finished render contains only some of them, so links to
+    # ones that did not make it must be dropped or the viewer chases 404s.
+    present = {n["id"] for n in nodes}
     for n in nodes:
         n["links"] = [l["to"] for l in sorted(links.get(n["id"], []),
-                                              key=lambda l: l["dist"])]
+                                              key=lambda l: l["dist"])
+                      if l["to"] in present]
         n.pop("clearance", None)
         n.pop("blender", None)
         if blurbs.get(n["id"]):

@@ -20,7 +20,7 @@ import * as THREE from 'three';
 
 THREE.ColorManagement.enabled = false;   // see note (1) above
 
-const BUILD = '3cf44f79';   // stamped by pipeline/version.py
+const BUILD = '33e11dd3';   // stamped by pipeline/version.py
 
 const FACES = ['px', 'nx', 'py', 'ny', 'pz', 'nz'];
 const DEG = Math.PI / 180;
@@ -213,7 +213,10 @@ async function loadDepth(id) {
    only needed once a viewpoint is actually drawn, and 17 of them is 2.4 MB --
    real money on a slow line -- so those are fetched on demand and for
    immediate neighbours. */
-const BASE_CACHE = 8;
+/* Walking continuously touches far more panoramas than jumping between
+   landmarks did, so the base-tier cache has to be deeper or it thrashes.
+   These are the small 512px maps with no mipmaps -- about 6 MB each. */
+const BASE_CACHE = 14;
 
 function touchBase(id) {
   app.baseOrder = app.baseOrder.filter(x => x !== id);
@@ -733,6 +736,29 @@ async function goTo(id, { turn = false, instant = false } = {}) {
              { turn: turn ? to.heading * DEG : null });
 }
 
+/* Pull in the panoramas we are about to need.
+ *
+ * nearestNode() will not switch to a viewpoint whose texture is not built,
+ * and at 1.15 m/s you outrun a prefetch that only fires on arrival: the
+ * viewer was showing a panorama 1.05 m away while a 0.13 m one sat unloaded.
+ * So keep the nearest handful warm continuously, ranked from where the
+ * camera actually is rather than from the last viewpoint reached. */
+let lastWarm = 0;
+function warmNearby(now) {
+  if (now - lastWarm < 250) return;
+  lastWarm = now;
+  const cur = app.nodes.get(app.current);
+  if (!cur) return;
+  const cands = [cur.id, ...cur.links]
+    .map(id => app.nodes.get(id))
+    .filter(n => n && (!n.cubeBase || !n.depthTex))
+    .sort((a, b) =>
+      Math.hypot(app.pos.x - a.pos[0], app.pos.z - a.pos[2]) -
+      Math.hypot(app.pos.x - b.pos[0], app.pos.z - b.pos[2]))
+    .slice(0, 6);
+  for (const n of cands) ensureNode(n.id).catch(() => {});
+}
+
 /** Called every frame: move, then make sure the right panorama is showing. */
 function stepMovement(now, dt) {
   if (app.glide) { stepGlide(now); }
@@ -740,6 +766,7 @@ function stepMovement(now, dt) {
     const v = WALK_SPEED * dt * app.moveDir;
     moveWithin(app.pos, -Math.sin(app.yaw) * v, -Math.cos(app.yaw) * v);
   }
+  warmNearby(now);
   const want = nearestNode(app.pos);
   if (want && want !== app.current) activate(want);
   camera.position.copy(app.pos);

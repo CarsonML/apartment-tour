@@ -853,6 +853,234 @@
       ],
       "heading": 0,
       "walkOnly": true
+    },
+    {
+      "id": "w047",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        4.975,
+        1.55,
+        -0.675
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w048",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        4.275,
+        1.55,
+        -0.725
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w049",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        3.775,
+        1.55,
+        -1.675
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w050",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        5.825,
+        1.55,
+        -0.925
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w051",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        4.075,
+        1.55,
+        -2.225
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w052",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        5.475,
+        1.55,
+        -0.175
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w053",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        3.625,
+        1.55,
+        -1.175
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w054",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        4.375,
+        1.55,
+        -2.375
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w055",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        3.475,
+        1.55,
+        -2.375
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w107",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        7.175,
+        1.55,
+        0.175
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w076",
+      "label": "Bathroom",
+      "room": "Bathroom",
+      "pos": [
+        8.025,
+        1.55,
+        -0.075
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w115",
+      "label": "Bedroom",
+      "room": "Bedroom",
+      "pos": [
+        1.875,
+        1.55,
+        -2.875
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w105",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        5.775,
+        1.55,
+        0.425
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w114",
+      "label": "Bedroom",
+      "room": "Bedroom",
+      "pos": [
+        1.875,
+        1.55,
+        -2.375
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w111",
+      "label": "Bathroom",
+      "room": "Bathroom",
+      "pos": [
+        10.025,
+        1.55,
+        -0.275
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w093",
+      "label": "Bedroom",
+      "room": "Bedroom",
+      "pos": [
+        2.025,
+        1.55,
+        -0.275
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w073",
+      "label": "Kitchen",
+      "room": "Kitchen",
+      "pos": [
+        8.775,
+        1.55,
+        -0.925
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w112",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        6.575,
+        1.55,
+        -0.875
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w078",
+      "label": "Bedroom",
+      "room": "Bedroom",
+      "pos": [
+        2.225,
+        1.55,
+        -0.875
+      ],
+      "heading": 0,
+      "walkOnly": true
     }
   ]
 }
