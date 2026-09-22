@@ -1,0 +1,5 @@
+# This is someone's home. Unlisted by default: the link is meant to be shared
+# with family, not found in a search. Delete this file (and the noindex tag in
+# index.html) if you would rather it be indexable.
+User-agent: *
+Disallow: /

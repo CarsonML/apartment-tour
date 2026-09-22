@@ -59,7 +59,18 @@ def main():
     os.makedirs(os.path.dirname(a.out), exist_ok=True)
     out.save(a.out)
 
-    meta = {"image": os.path.basename(a.out),
+    # The minimap is ~330 px wide on screen; shipping a 1752 px RGBA PNG made
+    # the floor plan nearly half the first load. WebP at 900 px is 40x smaller
+    # and still sharper than it is ever displayed.
+    web = out.copy()
+    web.thumbnail((900, 900), Image.LANCZOS)
+    web_path = os.path.splitext(a.out)[0] + ".webp"
+    web.save(web_path, "WEBP", quality=88, method=6)
+    print(f"web copy: {web.size[0]}x{web.size[1]} -> {web_path} "
+          f"({os.path.getsize(web_path)/1024:.0f} KB, "
+          f"source {os.path.getsize(a.out)/1024:.0f} KB)")
+
+    meta = {"image": os.path.basename(web_path),
             "x0": a.x0, "x1": a.x1, "y0": a.y0, "y1": a.y1,
             "w": out.width, "h": out.height}
     json.dump(meta, open(a.meta, "w"), indent=2)

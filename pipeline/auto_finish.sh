@@ -21,7 +21,7 @@ for pid in "$RENDER_PID" "$DEPTH_PID"; do
 done
 sleep 5
 
-cp site/data/tour.json site/data/tour.json.bak
+cp site/data/tour.json /tmp/tour.json.bak   # outside site/, so it is never deployed
 say "backed up the working manifest"
 
 say "pruning viewpoints that did not finish"
@@ -59,7 +59,7 @@ python3 pipeline/version.py >> "$LOG" 2>&1
 
 say "verifying"
 if python3 pipeline/verify_site.py >> "$LOG" 2>&1; then
-  rm -f site/data/tour.json.bak
+  rm -f /tmp/tour.json.bak
   say "DONE: site rebuilt and verified"
   python3 - >> "$LOG" 2>&1 <<'PY'
 import json
@@ -68,7 +68,7 @@ nw = sum(1 for n in t["nodes"] if n.get("walk"))
 print(f"live: {len(t['nodes'])-nw} viewpoints + {nw} walking positions")
 PY
 else
-  cp site/data/tour.json.bak site/data/tour.json
+  cp /tmp/tour.json.bak site/data/tour.json
   python3 pipeline/version.py >> "$LOG" 2>&1
   say "FAILED verification - rolled the manifest back, site still works"
 fi
