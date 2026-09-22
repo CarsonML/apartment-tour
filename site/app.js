@@ -20,7 +20,7 @@ import * as THREE from 'three';
 
 THREE.ColorManagement.enabled = false;   // see note (1) above
 
-const BUILD = '33e11dd3';   // stamped by pipeline/version.py
+const BUILD = '38c3a38c';   // stamped by pipeline/version.py
 
 const FACES = ['px', 'nx', 'py', 'ny', 'pz', 'nz'];
 const DEG = Math.PI / 180;

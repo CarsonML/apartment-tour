@@ -1071,6 +1071,18 @@
       "walkOnly": true
     },
     {
+      "id": "w092",
+      "label": "Bathroom",
+      "room": "Bathroom",
+      "pos": [
+        9.475,
+        1.55,
+        0.125
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
       "id": "w078",
       "label": "Bedroom",
       "room": "Bedroom",
@@ -1078,6 +1090,618 @@
         2.225,
         1.55,
         -0.875
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w083",
+      "label": "Bedroom",
+      "room": "Bedroom",
+      "pos": [
+        1.375,
+        1.55,
+        -2.775
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w099",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        3.125,
+        1.55,
+        -1.475
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w095",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        6.425,
+        1.55,
+        -0.525
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w089",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        6.175,
+        1.55,
+        -1.975
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w072",
+      "label": "Bedroom",
+      "room": "Bedroom",
+      "pos": [
+        1.675,
+        1.55,
+        -0.375
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w056",
+      "label": "Bedroom",
+      "room": "Bedroom",
+      "pos": [
+        1.975,
+        1.55,
+        -0.625
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w090",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        4.225,
+        1.55,
+        0.375
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w096",
+      "label": "Bathroom",
+      "room": "Bathroom",
+      "pos": [
+        8.825,
+        1.55,
+        -0.525
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w085",
+      "label": "Kitchen",
+      "room": "Kitchen",
+      "pos": [
+        7.325,
+        1.55,
+        -1.025
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w100",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        5.675,
+        1.55,
+        -2.475
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w068",
+      "label": "Bedroom",
+      "room": "Bedroom",
+      "pos": [
+        1.175,
+        1.55,
+        -1.725
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w079",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        6.475,
+        1.55,
+        -1.575
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w110",
+      "label": "Bathroom",
+      "room": "Bathroom",
+      "pos": [
+        9.225,
+        1.55,
+        -0.225
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w104",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        5.475,
+        1.55,
+        -2.825
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w059",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        5.625,
+        1.55,
+        0.125
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w077",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        3.275,
+        1.55,
+        -0.325
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w081",
+      "label": "Bedroom",
+      "room": "Bedroom",
+      "pos": [
+        0.275,
+        1.55,
+        -2.275
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w082",
+      "label": "Bedroom",
+      "room": "Bedroom",
+      "pos": [
+        0.675,
+        1.55,
+        -2.775
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w106",
+      "label": "Bathroom",
+      "room": "Bathroom",
+      "pos": [
+        8.175,
+        1.55,
+        0.225
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w061",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        4.025,
+        1.55,
+        -2.575
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w064",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        4.925,
+        1.55,
+        0.175
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w088",
+      "label": "Bedroom",
+      "room": "Bedroom",
+      "pos": [
+        1.875,
+        1.55,
+        -1.825
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w109",
+      "label": "Bedroom",
+      "room": "Bedroom",
+      "pos": [
+        1.225,
+        1.55,
+        -0.225
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w116",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        3.075,
+        1.55,
+        -2.875
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w062",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        3.975,
+        1.55,
+        -0.125
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w086",
+      "label": "Bedroom",
+      "room": "Bedroom",
+      "pos": [
+        0.375,
+        1.55,
+        -1.075
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w102",
+      "label": "Bedroom",
+      "room": "Bedroom",
+      "pos": [
+        2.675,
+        1.55,
+        -0.625
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w103",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        3.075,
+        1.55,
+        -0.825
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w108",
+      "label": "Bedroom",
+      "room": "Bedroom",
+      "pos": [
+        0.325,
+        1.55,
+        -0.225
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w063",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        4.575,
+        1.55,
+        0.175
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w071",
+      "label": "Bedroom",
+      "room": "Bedroom",
+      "pos": [
+        1.675,
+        1.55,
+        -1.525
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w084",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        5.125,
+        1.55,
+        -2.775
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w094",
+      "label": "Bedroom",
+      "room": "Bedroom",
+      "pos": [
+        2.525,
+        1.55,
+        -0.275
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w113",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        3.075,
+        1.55,
+        -2.225
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w057",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        6.225,
+        1.55,
+        -0.925
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w058",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        5.875,
+        1.55,
+        -1.825
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w075",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        6.075,
+        1.55,
+        0.025
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w087",
+      "label": "Kitchen",
+      "room": "Kitchen",
+      "pos": [
+        6.825,
+        1.55,
+        -1.075
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w117",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        3.875,
+        1.55,
+        -2.875
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w065",
+      "label": "Bedroom",
+      "room": "Bedroom",
+      "pos": [
+        1.625,
+        1.55,
+        -2.175
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w067",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        3.625,
+        1.55,
+        -0.425
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w074",
+      "label": "Bedroom",
+      "room": "Bedroom",
+      "pos": [
+        1.875,
+        1.55,
+        -0.975
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w097",
+      "label": "Kitchen",
+      "room": "Kitchen",
+      "pos": [
+        7.925,
+        1.55,
+        -0.875
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w098",
+      "label": "Kitchen",
+      "room": "Kitchen",
+      "pos": [
+        8.425,
+        1.55,
+        -0.875
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w080",
+      "label": "Bedroom",
+      "room": "Bedroom",
+      "pos": [
+        0.325,
+        1.55,
+        -1.625
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w070",
+      "label": "Bedroom",
+      "room": "Bedroom",
+      "pos": [
+        1.675,
+        1.55,
+        -2.625
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w060",
+      "label": "Bedroom",
+      "room": "Bedroom",
+      "pos": [
+        1.375,
+        1.55,
+        -0.525
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w066",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        6.225,
+        1.55,
+        -0.275
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w069",
+      "label": "Bathroom",
+      "room": "Bathroom",
+      "pos": [
+        9.825,
+        1.55,
+        -0.025
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w091",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        5.425,
+        1.55,
+        0.375
+      ],
+      "heading": 0,
+      "walkOnly": true
+    },
+    {
+      "id": "w101",
+      "label": "Living room",
+      "room": "Living room",
+      "pos": [
+        3.425,
+        1.55,
+        -2.825
       ],
       "heading": 0,
       "walkOnly": true
