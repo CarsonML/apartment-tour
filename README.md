@@ -181,15 +181,25 @@ trigger an eviction.
 
 ## Publishing
 
-`site/` is static. Drag the folder onto Netlify Drop, or:
+Live at **https://carsonml.github.io/apartment-tour/** (GitHub Pages).
 
-```bash
-npx wrangler pages deploy site --project-name apartment-tour
-```
+`site/` is static, so any host works. GitHub Pages was chosen because the
+`gh` CLI was already authenticated; Cloudflare and Netlify both needed a
+browser OAuth round-trip that kept timing out. Note Pages can only serve from
+a branch root or `/docs`, so `site/` is pushed as the root of a `gh-pages`
+branch rather than served in place -- `publish.sh` handles that.
 
-GitHub Pages works too. The only requirement is that `.webp` and `.bin` get
-sane MIME types, which every host does by default. `_headers` sets long cache
-lifetimes for Netlify and Cloudflare Pages.
+    ./publish.sh update    rebuild gh-pages from site/
+    ./publish.sh down      unpublish and make the repo private again
+    ./publish.sh status    where it is and whether it is live
+
+On the free plan Pages requires a public repo, so the source is public while
+the tour is up. `robots.txt` and a `noindex` tag keep it out of search
+results, but the repository itself is browsable -- which is why `down` flips
+visibility back as well as disabling Pages.
+
+Elsewhere: drag `site/` onto Netlify Drop, or
+`npx wrangler pages deploy site`. Both keep the source private.
 
 ## Changing the words
 
